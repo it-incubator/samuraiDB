@@ -1,12 +1,5 @@
-import SamuraiDB from './SamuraiDB';
-import { promises as fs } from 'fs';
-
-jest.mock('fs', () => ({
-    promises: {
-        appendFile: jest.fn(),
-        readFile: jest.fn(),
-    },
-}));
+import SamuraiDB from './samuraidb';
+import { promises as fs } from 'node:fs';
 
 describe('SamuraiDB', () => {
     const filename = 'testdb.txt';
@@ -14,26 +7,33 @@ describe('SamuraiDB', () => {
 
     beforeEach(() => {
         db = new SamuraiDB(filename);
-        fs.appendFile.mockClear();
-        fs.readFile.mockClear();
+        fs.readFile = jest.fn();
+
+        if (jest.isMockFunction(fs.appendFile))
+          fs.appendFile.mockRestore();
     });
+
+    afterEach(() => {
+        fs.unlink(filename);
+    })
 
     test('set should append data to the file', async () => {
         const key = 'testKey';
         const data = { name: 'John Doe', age: 30 };
+        const append = jest.spyOn(fs, 'appendFile').mockImplementation(() => {});
 
         await db.set(key, data);
 
-        expect(fs.appendFile).toHaveBeenCalledWith(filename, `${key},${JSON.stringify(data)}\n`);
+        expect(append).toHaveBeenCalledWith(filename, `${key},${JSON.stringify(data)}\n`);
     });
 
     test('get should return the latest value for a given key', async () => {
         const key = 'testKey';
         const data1 = { name: 'John Doe', age: 30 };
         const data2 = { name: 'Jane Doe', age: 25 };
-        const fileContent = `${key},${JSON.stringify(data1)}\n${key},${JSON.stringify(data2)}\n`;
 
-        fs.readFile.mockResolvedValue(fileContent);
+        await db.set(key, data1);
+        await db.set(key, data2);
 
         const result = await db.get(key);
 
@@ -42,9 +42,10 @@ describe('SamuraiDB', () => {
 
     test('get should return null if the key is not found', async () => {
         const key = 'nonExistentKey';
-        const fileContent = 'anotherKey,{"value":"test"}\n';
+        const anotherKey = 'anotherKey';
+        const data = '{"value":"test"}\n';
 
-        fs.readFile.mockResolvedValue(fileContent);
+        await db.set(anotherKey, data);
 
         const result = await db.get(key);
 
