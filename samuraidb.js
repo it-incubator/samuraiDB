@@ -23,12 +23,12 @@ class SamuraiDB {
         await fileHandle.close();
 
         // Обновляем индекс: сохраняем смещение для ключа
-        this.index.set(key.toString(), offset);
+        this.index.set(key.toString(), {offset, recordSize: entry.length});
     }
 
     async get(key) {
         // Проверяем наличие ключа в индексе
-        const offset = this.index.get(key);
+        const {offset, recordSize} = this.index.get(key);
         if (offset === undefined) {
             return null; // Если ключа нет в индексе, возвращаем null
         }
@@ -37,8 +37,8 @@ class SamuraiDB {
         const fileHandle = await fs.open(this.filename, 'r');
 
         // Читаем строку с ключом и значением
-        const buffer = Buffer.alloc(1024); // Создаем буфер для чтения строки
-        await fileHandle.read(buffer, 0, 1024, offset);
+        const buffer = Buffer.alloc(recordSize); // Создаем буфер для чтения строки
+        await fileHandle.read(buffer, 0, recordSize, offset);
         const line = buffer.toString('utf-8').trim();
 
         // Закрываем файл
