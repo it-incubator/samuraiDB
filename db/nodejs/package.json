@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "d": "node --inspect-brk index.js",
-    "dw": "nodemon --inspect-brk index.js"
+    "dw": "nodemon --inspect-brk index.js",
+    "start:server:dev": "nodemon api/server.js"
   },
   "author": "",
   "license": "ISC",

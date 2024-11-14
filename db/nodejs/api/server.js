@@ -52,6 +52,10 @@ const server = net.createServer(async (socket) => {
     socket.on('end', () => {
         console.log('Client disconnected');
     });
+
+    socket.on('error', () => {
+        console.log('Client error');
+    })
 });
 
 server.listen(4001, () => {
