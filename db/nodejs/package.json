@@ -1,13 +1,12 @@
 {
   "name": "samuraiDB",
   "version": "0.0.1",
-  "type": "module",
-  "main": "index.js",
+  "main": "src/index.ts",
   "scripts": {
     "test": "jest",
-    "d": "node --inspect-brk index.js",
-    "dw": "nodemon --inspect-brk index.js",
-    "start:server:dev": "nodemon api/server.js"
+    "d": "node --inspect-brk src/index.ts",
+    "dw": "nodemon --inspect-brk src/index.ts",
+    "start:server:dev": "nodemon"
   },
   "author": "",
   "license": "ISC",
@@ -15,12 +14,14 @@
   "dependencies": {
     "@babel/preset-env": "^7.25.4",
     "babel-jest": "^29.7.0",
-    "jest": "^29.7.0",
     "nodemon": "^3.1.7"
   },
-  "jest": {
-    "transform": {
-      "^.+\\.[tj]sx?$": "babel-jest"
-    }
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.9.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
   }
 }

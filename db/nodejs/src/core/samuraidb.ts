@@ -1,25 +1,28 @@
+import { FileAdapter } from './file.adapter';
+
 class SamuraiDB {
+    private fileAdapter: FileAdapter;
+    private index: Map<string, any>;
     /**
      *
      * @param {FileAdapter} fileAdapter
      */
-    constructor(fileAdapter) {
+    constructor(fileAdapter: FileAdapter) {
         this.fileAdapter = fileAdapter;
-       // this.index = new Map();
     }
 
     async init() {
         this.index = await this.fileAdapter.readIndex();
     }
 
-    async set(key, data) {
+    async set(key: string, data: any) {
         const {offset} = await this.fileAdapter.set(key, data)
         // Обновляем индекс: сохраняем смещение для ключа
         this.index.set(key.toString(), offset);
         await this.fileAdapter.saveIndex(this.index);
     }
 
-    async get(key) {
+    async get(key: string) {
         // Проверяем наличие ключа в индексе
         const offset = this.index.get(key);
         if (offset === undefined) {
