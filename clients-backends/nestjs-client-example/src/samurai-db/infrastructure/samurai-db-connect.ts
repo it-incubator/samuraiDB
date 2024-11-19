@@ -10,8 +10,8 @@ export class SamuraiDBConnect extends ConnectionService {
   private retryInterval: number;
   private attempt: number = 0; // Инициализация попыток с 0
   protected status: 'CONNECTING' | 'CONNECTED' = 'CONNECTING';
-  private onRejectHandler: () => void = () => {};
-  private onConnectHandler: () => void = () => {};
+
+  private subscriptions = new Map<'connect' | 'reject', () => void>();
 
   constructor(@Inject(MODULE_OPTIONS_TOKEN) private options: ModuleOptions) {
     super();
@@ -20,7 +20,8 @@ export class SamuraiDBConnect extends ConnectionService {
   }
 
   private reconnect(err) {
-    this.onRejectHandler();
+    this.onReject();
+
     console.error('Connection error:', err?.message);
     this.status = 'CONNECTING';
     this.attempt++; // Увеличение счетчика попыток
@@ -45,7 +46,7 @@ export class SamuraiDBConnect extends ConnectionService {
         this.retryInterval = this.options.initialRetryInterval; // Сброс интервала при успешном подключении
         this.attempt = 0; // Сброс счетчика попыток при успешном подключении
 
-        this.onConnectHandler();
+        this.onConnect();
       },
     );
 
@@ -60,10 +61,20 @@ export class SamuraiDBConnect extends ConnectionService {
     });
   }
 
-  public onReject(callback: () => void) {
-    this.onRejectHandler = callback;
+  public subscribeToEvents(listener: 'connect', handler: () => void): void;
+  public subscribeToEvents(listener: 'reject', handler: () => void): void;
+
+  public subscribeToEvents(
+    listener: 'connect' | 'reject',
+    handler: () => void,
+  ): void {
+    this.subscriptions.set(listener, handler);
   }
-  public onConnect(callback: () => void) {
-    this.onConnectHandler = callback;
+
+  private onReject() {
+    this.subscriptions.get('reject')?.();
+  }
+  private onConnect() {
+    this.subscriptions.get('connect')?.();
   }
 }

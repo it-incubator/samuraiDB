@@ -10,12 +10,12 @@ export class SamuraiDBDriver<T> {
   > = new Map();
 
   constructor(private readonly connection: SamuraiDBConnect) {
-    connection.onReject(() => {
+    connection.subscribeToEvents('reject', () => {
       this.requestsMap.forEach((item) => item.reject('Connection lost'));
       this.requestsMap = new Map();
     });
 
-    connection.onConnect(() => {
+    connection.subscribeToEvents('connect', () => {
       connection.client.on('data', (data) => {
         console.log('Received from server:', data.toString());
         const action = JSON.parse(data.toString());
