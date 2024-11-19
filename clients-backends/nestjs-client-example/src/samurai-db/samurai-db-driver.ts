@@ -1,24 +1,27 @@
-import {Injectable} from '@nestjs/common';
-import {randomUUID} from 'crypto';
-import {SamuraiDBConnect} from "./infrastructure/samurai-db-connect";
+import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { SamuraiDBConnect } from './infrastructure/samurai-db-connect';
 
 @Injectable()
 export class SamuraiDBDriver<T> {
   requestsMap: Map<
-      string,
-      { resolve: (data: any) => void; reject: (data: any) => void }
+    string,
+    { resolve: (data: any) => void; reject: (data: any) => void }
   > = new Map();
 
   constructor(private readonly connection: SamuraiDBConnect) {
     connection.onReject(() => {
-      this.requestsMap.forEach(item => item.reject('Connection lost'))
-      this.requestsMap = new Map()
-    })
-    connection.client.on('data', (data) => {
-      console.log('Received from server:', data.toString());
-      const action = JSON.parse(data.toString());
-      this.requestsMap.get(action.uuid).resolve(action);
-      this.requestsMap.delete(action.uuid);
+      this.requestsMap.forEach((item) => item.reject('Connection lost'));
+      this.requestsMap = new Map();
+    });
+
+    connection.onConnect(() => {
+      connection.client.on('data', (data) => {
+        console.log('Received from server:', data.toString());
+        const action = JSON.parse(data.toString());
+        this.requestsMap.get(action.uuid).resolve(action);
+        this.requestsMap.delete(action.uuid);
+      });
     });
   }
 

@@ -13,7 +13,7 @@
 - [x] ✅ Write to index offset and size of record
 - [x] ✅ Restore index after restart app
 - [x] ✅ Reconnect to DBServer on client side
-- [ ] 🟩 reject/throw error when clieted make request and client is not connected (now loading always)
+- [x] ✅ reject/throw error when clieted make request and client is not connected (now loading always)
 - [x] 🟩 todo: set work folder for DB (now we must set separate file name)
 - [x] 🟩 migrate DB core/tests/server to type script
 - [ ] 🟩 determine second language for DB
