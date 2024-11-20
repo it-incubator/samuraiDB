@@ -30,5 +30,6 @@ contextBridge.exposeInMainWorld('tcpClient', {
 
   connectToServer: (host: string, port: number) => ipcRenderer.invoke('connectToServer', host, port),
   onData: (callback: (payload: string) => void) => ipcRenderer.on('server-data', (_event, data) => callback(data)),
+  onStatus: (callback: (payload: string) => void) => ipcRenderer.on('server-connection-status', (_event, data) => callback(data)),
   sendData: <T extends TcpClientAPI>(data: T) => ipcRenderer.invoke('sendData', data)
 })
