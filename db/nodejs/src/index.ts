@@ -1,8 +1,10 @@
 import SamuraiDB from './core/samuraidb';
 import { FileAdapter } from './core/file.adapter';
+import { IndexManager } from './core/index-manager';
 
 const fileAdapter = new FileAdapter(__dirname + '/samuraidb.txt');
-const samuraiDB = new SamuraiDB(fileAdapter);
+const indexManager = new IndexManager(fileAdapter)
+const samuraiDB = new SamuraiDB(fileAdapter, indexManager);
 
 
 async function seedDB() {

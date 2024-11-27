@@ -3,11 +3,13 @@ import SamuraiDB from '../core/samuraidb';
 import { randomUUID } from 'crypto';
 import { FileAdapter } from '../core/file.adapter';
 import { join } from 'node:path';
+import { IndexManager } from '../core/index-manager';
 
 const dir = join(__dirname, '..', '..', 'db');
 
 const fileAdapter = new FileAdapter(dir);
-const db = new SamuraiDB(fileAdapter);
+const indexManager = new IndexManager(fileAdapter);
+const db = new SamuraiDB(fileAdapter, indexManager);
 
 (async () => {
   await db.init();
