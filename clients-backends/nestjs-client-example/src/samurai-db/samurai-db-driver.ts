@@ -28,7 +28,8 @@ export class SamuraiDBDriver<T> {
   async getById(id: string): Promise<T> {
     const { promise, uuid } = this.registerRequest<T>();
     const action = { type: 'GET', payload: { id: id }, uuid: uuid };
-    this.connection.client.write(JSON.stringify(action)); // todo: if client not connected shuld reject
+    const jsonData = JSON.stringify(action);
+    this.connection.client.write(jsonData + '\n');
     return promise;
   }
 
@@ -43,14 +44,14 @@ export class SamuraiDBDriver<T> {
   async deleteById(id: string): Promise<void> {
     const { promise, uuid } = this.registerRequest<void>();
     const action = { type: 'DELETE', payload: { id: Number(id) }, uuid: uuid };
-    this.connection.client.write(JSON.stringify(action));
+    this.connection.client.write(JSON.stringify(action) + '\n');
     return promise;
   }
 
   async set<T extends { id: string }>(dto: Omit<T, 'id'>): Promise<T> {
     const { promise, uuid } = this.registerRequest<T>();
     const action = { type: 'SET', payload: { ...dto }, uuid: uuid };
-    this.connection.client.write(JSON.stringify(action));
+    this.connection.client.write(JSON.stringify(action) + '\n');
     return promise;
   }
 

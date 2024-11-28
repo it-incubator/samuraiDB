@@ -19,7 +19,7 @@ const server = createServer(async (socket) => {
   console.log('Client connected');
 
   socket.on('data', async (data) => {
-    let requestAction = JSON.parse(data.toString());
+    let requestAction = JSON.parse(data.toString().split('\n')[0]);
 
     console.log('Received from client:', data.toString());
 
