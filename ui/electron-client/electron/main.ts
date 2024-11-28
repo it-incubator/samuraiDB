@@ -95,7 +95,7 @@ ipcMain.handle('connectToServer', async (event, host: string, port: number) => {
 
 ipcMain.handle('sendData', async (event, data) => {
   if (client) {
-    client.write(JSON.stringify(data), (err) => {
+    client.write(JSON.stringify(data) + '\n', (err) => {
       if (err) {
         console.error('Error sending data:', err);
         event.sender.send('server-connection-status', 'Error');
