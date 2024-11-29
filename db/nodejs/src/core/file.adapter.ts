@@ -2,8 +2,8 @@ import { join } from 'node:path';
 import { mkdirSync, promises as fs } from 'node:fs';
 
 export class FileAdapter {
-  private readonly filename: string;
-  private readonly indexFileName: string;
+  readonly filename: string;
+  readonly indexFileName: string;
 
   constructor(dir: string) {
 
@@ -34,7 +34,7 @@ export class FileAdapter {
   async get(offset: number) {
     // Проверяем наличие ключа в индексе
     if (offset === undefined) {
-      throw new Error('Offset  must be passed'); // Если ключа нет в индексе, возвращаем null
+      throw new Error('Offset must be passed'); // Если ключа нет в индексе, возвращаем null
     }
 
     // Открываем файл и переходим к нужному смещению
