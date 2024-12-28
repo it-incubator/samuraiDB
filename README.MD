@@ -9,6 +9,7 @@
 
 ## Todo List
 
+### NodeJs implementation
 - [x] ✅️ Fix tests
 - [x] ✅ Write to index offset and size of record
 - [x] ✅ Restore index after restart app
@@ -18,6 +19,9 @@
 - [x] ✅ migrate DB core/tests/server to type script
 - [x] ✅ determine second language for DB
 - [x] ✅ move Index logic to separate class IndexManager
+- [x] ✅ add ability to create some independed databases
+- [x] ✅ add unit tests for FileAdapter
+- [x] ✅ add unit tests for IndexManager
 - [ ] 🟩 fix db core nodejs tests
 - [ ] 🟩 update entity (фактически тот же db.set)
 - [ ] 🟩 delete entity
@@ -25,8 +29,18 @@
 - [x] ✅ add SegmentManager
 - [ ] 🟩 add CompactionManager 🔥 (add syntetic delay between files or record as settings when compaction)
 - [ ] 🟩 add/check eslint/prettier
-- [ ] 🟩 add ability to create some independed databases
-- [ ] 🟩 add unit tests for FileAdapter
-- [ ] 🟩 add unit tests for IndexManager
 - [ ] 🟩 add unit tests for SegmentManager
 - [ ] 🟩 add unit tests for CompactionManager
+
+
+### Go implementation
+- [x] add unit tests for FileAdapter
+- [x] add unit tests for IndexManager
+- [ ] update entity (фактически тот же db.set)
+- [ ] delete entity
+- [ ] get all
+- [x] add SegmentManager
+- [ ] add CompactionManager 🔥 (add synthetic delay between files or record as settings when compaction)
+- [ ] add/check eslint/prettier
+- [ ] add unit tests for SegmentManager
+- [ ] add unit tests for CompactionManager

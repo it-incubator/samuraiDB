@@ -14,6 +14,7 @@ import (
 )
 
 type FileAdapter struct {
+	dir           string
 	filename      string
 	indexFileName string
 	mutex         sync.Mutex
@@ -28,16 +29,18 @@ func NewAdapter(dir string) *FileAdapter {
 		log.Fatalf("Failed to create directory: %v", err)
 	}
 
-	return &FileAdapter{filename: filename, indexFileName: indexFileName}
+	return &FileAdapter{dir: dir, filename: filename, indexFileName: indexFileName}
 }
 
-func (fa *FileAdapter) Set(key string, data any) (int64, error) {
+func (fa *FileAdapter) Set(key string, data any, segment int64) (int64, error) {
 	fa.mutex.Lock()
 	defer fa.mutex.Unlock()
 
-	entry := fmt.Sprintf("%s,%s\n", key, serializeData(data))
+	entry := fa.StringifyEntry(key, data)
 
-	file, err := os.OpenFile(fa.filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	filename, _ := fa.getSegmentFilename(segment)
+
+	file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return 0, err
 	}
@@ -56,12 +59,14 @@ func (fa *FileAdapter) Set(key string, data any) (int64, error) {
 	return offset, nil
 }
 
-func (fa *FileAdapter) Get(offset int64) (map[string]any, error) {
+func (fa *FileAdapter) Get(offset, segment int64) (map[string]any, error) {
 	if offset < 0 {
 		return nil, fmt.Errorf("offset must be passed")
 	}
 
-	file, err := os.Open(fa.filename)
+	filename, _ := fa.getSegmentFilename(segment)
+
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -89,15 +94,11 @@ func (fa *FileAdapter) Get(offset int64) (map[string]any, error) {
 	return value, nil
 }
 
-func (fa *FileAdapter) SaveIndex(indexMap map[string]int64) error {
+func (fa *FileAdapter) SaveIndexRaw(indexMapRaw []byte) error {
 	fa.mutex.Lock()
 	defer fa.mutex.Unlock()
 
-	serializedMap, err := json.Marshal(indexMap)
-	if err != nil {
-		log.Fatal("were unable to serialize the data in SaveIndex")
-	}
-	return os.WriteFile(fa.indexFileName, serializedMap, 0644)
+	return os.WriteFile(fa.indexFileName, indexMapRaw, 0644)
 }
 
 func (fa *FileAdapter) ReadIndex() (map[string]int64, error) {
@@ -118,6 +119,22 @@ func (fa *FileAdapter) ReadIndex() (map[string]int64, error) {
 	return index, nil
 }
 
+func (fa *FileAdapter) ReadRawIndex() ([]byte, error) {
+	fileContent, err := os.ReadFile(fa.indexFileName)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return []byte{}, nil
+		}
+		return nil, err
+	}
+
+	return fileContent, nil
+}
+
+func (fa *FileAdapter) GetFileSize(segment int64) (int64, error) {
+	return 0, nil
+}
+
 // Helper functions
 func serializeData(data any) string {
 	b, _ := json.Marshal(data)
@@ -131,4 +148,15 @@ func parseEntry(line string) (string, string, error) {
 	}
 
 	return res[0], res[1], nil
+}
+
+func (fa *FileAdapter) StringifyEntry(key string, data any) string {
+	entry := fmt.Sprintf("%s,%s\n", key, serializeData(data))
+
+	return entry
+}
+
+func (fa *FileAdapter) getSegmentFilename(segment int64) (string, error) {
+	segmentPath := filepath.Join(fa.dir, fmt.Sprintf("samuraidb_segment_%d.txt", segment))
+	return segmentPath, nil
 }

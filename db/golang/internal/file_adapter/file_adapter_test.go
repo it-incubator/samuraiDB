@@ -36,7 +36,7 @@ func TestFileAdapter_SaveAndReadIndex(t *testing.T) {
 	adapter := NewAdapter(dir)
 
 	value := map[string]int64{"name": 123, "name2": 456}
-	err := adapter.SaveIndex(value)
+	err := adapter.SaveIndexRaw(value)
 
 	assert.NoError(t, err)
 
@@ -46,7 +46,7 @@ func TestFileAdapter_SaveAndReadIndex(t *testing.T) {
 	assert.Equal(t, value, readIndex)
 
 	value = map[string]int64{}
-	err = adapter.SaveIndex(value)
+	err = adapter.SaveIndexRaw(value)
 
 	assert.NoError(t, err)
 
