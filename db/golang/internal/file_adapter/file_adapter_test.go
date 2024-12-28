@@ -19,7 +19,7 @@ func TestFileAdapter_SetAndGet(t *testing.T) {
 	adapter := NewAdapter(dir)
 
 	key := "exampleKey"
-	value := map[string]string{"name": "Samurai"}
+	value := map[string]any{"name": "Samurai"}
 	offset, err := adapter.Set(key, value)
 
 	assert.NoError(t, err)
@@ -28,7 +28,7 @@ func TestFileAdapter_SetAndGet(t *testing.T) {
 	readValue, err := adapter.Get(offset)
 	assert.NoError(t, err)
 	assert.NoError(t, err)
-	assert.Equal(t, value, readValue)
+	assert.ObjectsAreEqualValues(value, readValue)
 }
 
 func TestFileAdapter_SaveAndReadIndex(t *testing.T) {

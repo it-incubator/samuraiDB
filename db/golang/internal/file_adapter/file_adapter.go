@@ -31,7 +31,7 @@ func NewAdapter(dir string) *FileAdapter {
 	return &FileAdapter{filename: filename, indexFileName: indexFileName}
 }
 
-func (fa *FileAdapter) Set(key string, data interface{}) (int64, error) {
+func (fa *FileAdapter) Set(key string, data any) (int64, error) {
 	fa.mutex.Lock()
 	defer fa.mutex.Unlock()
 
