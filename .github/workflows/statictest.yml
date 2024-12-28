@@ -1,0 +1,32 @@
+name: go vet test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  statictest:
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.23
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build statictest binary
+        run: |
+          cd db/golang
+          go generate ./...
+          go build -o ./bin/statictest ./pkg/statictest/main.go
+
+      - name: Setup autotest binary
+        run: |
+          chmod +x $GITHUB_WORKSPACE/db/golang/bin/statictest
+          mv $GITHUB_WORKSPACE/db/golang/bin/statictest /usr/local/bin/statictest
+
+      - name: Run statictest
+        run: |
+          cd db/golang
+          go vet -vettool=$(which statictest) ./...
