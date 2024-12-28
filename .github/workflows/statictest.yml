@@ -2,9 +2,7 @@ name: go vet test
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    types: [opened, synchronize, reopened]
 
 jobs:
   statictest:

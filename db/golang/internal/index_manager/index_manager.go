@@ -1,6 +1,6 @@
 package indexmanager
 
-import fa "samurai-db/internal/file-adapter"
+import fa "samurai-db/internal/file_adapter"
 
 type IndexManager struct {
 	index       map[string]int64

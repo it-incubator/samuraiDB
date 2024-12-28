@@ -8,8 +8,8 @@ import (
 	"log"
 	"net"
 	"path/filepath"
-	fa "samurai-db/internal/file-adapter"
-	im "samurai-db/internal/index-manager"
+	fa "samurai-db/internal/file_adapter"
+	im "samurai-db/internal/index_manager"
 	sdb "samurai-db/internal/samurai-db"
 	"strings"
 )

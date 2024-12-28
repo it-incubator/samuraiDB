@@ -1,8 +1,8 @@
 package samuraidb
 
 import (
-	fa "samurai-db/internal/file-adapter"
-	im "samurai-db/internal/index-manager"
+	fa "samurai-db/internal/file_adapter"
+	im "samurai-db/internal/index_manager"
 )
 
 type SamuraiDB struct {
