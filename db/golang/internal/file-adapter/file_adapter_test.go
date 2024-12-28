@@ -1,4 +1,4 @@
-package file_adapter
+package fileadapter
 
 import (
 	"github.com/stretchr/testify/assert"

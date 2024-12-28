@@ -1,4 +1,4 @@
-package index_manager
+package indexmanager
 
 import fa "samurai-db/internal/file-adapter"
 

@@ -1,4 +1,4 @@
-package file_adapter
+package fileadapter
 
 import (
 	"encoding/json"
@@ -58,7 +58,7 @@ func (fa *FileAdapter) Set(key string, data interface{}) (int64, error) {
 
 func (fa *FileAdapter) Get(offset int64) (map[string]any, error) {
 	if offset < 0 {
-		return nil, fmt.Errorf("Offset must be passed")
+		return nil, fmt.Errorf("offset must be passed")
 	}
 
 	file, err := os.Open(fa.filename)
@@ -127,7 +127,7 @@ func serializeData(data any) string {
 func parseEntry(line string) (string, string, error) {
 	res := strings.SplitN(line, ",", 2)
 	if len(res) < 2 {
-		return "", "", fmt.Errorf("Invalid entry format")
+		return "", "", fmt.Errorf("invalid entry format")
 	}
 
 	return res[0], res[1], nil
