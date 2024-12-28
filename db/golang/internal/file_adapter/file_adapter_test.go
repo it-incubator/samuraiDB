@@ -62,7 +62,7 @@ func TestFileAdapter_GetInvalidOffset(t *testing.T) {
 
 	_, err := adapter.Get(-1)
 	assert.Error(t, err)
-	assert.Equal(t, "Offset must be passed", err.Error())
+	assert.Equal(t, "offset must be passed", err.Error())
 }
 
 func TestFileAdapter_TestParseEntry(t *testing.T) {

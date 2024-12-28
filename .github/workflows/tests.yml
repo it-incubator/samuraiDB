@@ -1,0 +1,25 @@
+name: go test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.23
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          cd db/golang
+          go mod download
+
+      - name: Run tests
+        run: |
+          cd db/golang
+          go test ./...
