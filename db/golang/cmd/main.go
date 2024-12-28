@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	fa "samurai-db/internal/file_adapter"
 	im "samurai-db/internal/index_manager"
-	sdb "samurai-db/internal/samurai-db"
+	sdb "samurai-db/internal/samuraidb"
 	"strings"
 )
 
