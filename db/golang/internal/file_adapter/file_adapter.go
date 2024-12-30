@@ -101,24 +101,6 @@ func (fa *FileAdapter) SaveIndexRaw(indexMapRaw []byte) error {
 	return os.WriteFile(fa.indexFileName, indexMapRaw, 0644)
 }
 
-//func (fa *FileAdapter) ReadIndex() (map[string]int64, error) {
-//	fileContent, err := os.ReadFile(fa.indexFileName)
-//	if err != nil {
-//		if errors.Is(err, fs.ErrNotExist) {
-//			return make(map[string]int64), nil
-//		}
-//		return nil, err
-//	}
-//
-//	var index map[string]int64
-//	err = json.Unmarshal(fileContent, &index)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return index, nil
-//}
-
 func (fa *FileAdapter) ReadRawIndex() ([]byte, error) {
 	fileContent, err := os.ReadFile(fa.indexFileName)
 	if err != nil {
@@ -132,7 +114,23 @@ func (fa *FileAdapter) ReadRawIndex() ([]byte, error) {
 }
 
 func (fa *FileAdapter) GetFileSize(segment int64) (int64, error) {
-	return 0, nil
+	fa.mutex.Lock()
+	defer fa.mutex.Unlock()
+
+	filename, _ := fa.getSegmentFilename(segment)
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		log.Fatalf("не удалось получить информацию о файле: %v", err)
+	}
+
+	return fileInfo.Size(), nil
 }
 
 // Helper functions

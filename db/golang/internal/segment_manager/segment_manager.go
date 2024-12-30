@@ -12,25 +12,24 @@ type SegmentManager struct {
 }
 
 func NewSegmentManager(fa *fa.FileAdapter) *SegmentManager {
-	return &SegmentManager{fileAdapter: fa}
-}
-
-func (s *SegmentManager) init() error {
-	s.currentSegment = 0
-	return nil
+	return &SegmentManager{fileAdapter: fa, currentSegment: 0, segmentSize: 1024}
 }
 
 func (s *SegmentManager) Set(key string, data any) (int64, int64, error) {
-	size, err := s.fileAdapter.GetFileSize(s.currentSegment)
+	foundCurrentSegmentFolder := true
 
-	if err != nil {
-		return 0, 0, fmt.Errorf("getFileSize in segment manager: %e", err)
-	}
+	// fixme: Костыльный поиск последнего сегмента
+	for foundCurrentSegmentFolder {
+		size, _ := s.fileAdapter.GetFileSize(s.currentSegment)
 
-	entry := s.fileAdapter.StringifyEntry(key, data)
+		entry := s.fileAdapter.StringifyEntry(key, data)
 
-	if size+int64(len(entry)) > s.segmentSize {
-		s.currentSegment++
+		if size+int64(len(entry)) > s.segmentSize {
+			s.currentSegment++
+			continue
+		}
+
+		foundCurrentSegmentFolder = false
 	}
 
 	offset, err := s.fileAdapter.Set(key, data, s.currentSegment)

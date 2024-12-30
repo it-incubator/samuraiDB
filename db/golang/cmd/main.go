@@ -79,7 +79,6 @@ func handleConnection(conn net.Conn, db *sdb.SamuraiDB) {
 			if err := db.Set(id, requestAction.Payload); err != nil {
 				log.Printf("Failed to set value: %v", err)
 				fmt.Fprintf(conn, "Error setting value\n")
-				continue
 			}
 
 			response := map[string]interface{}{
