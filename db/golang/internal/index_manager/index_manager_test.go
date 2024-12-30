@@ -18,16 +18,29 @@ func TestIndexManager(t *testing.T) {
 				err := indexManager.Init()
 				assert.NoError(t, err)
 
-				expectedIndex := make(map[string]int64)
+				expectedIndex := make(map[string]Index)
 				assert.Equal(t, expectedIndex, indexManager.index)
 			},
 		},
 		{
-			name: "Test SetOffset function",
+			name: "Test SetOffset function for segment 0",
 			testFunc: func(t *testing.T, indexManager *IndexManager) {
 				key := "test_key"
-				offset := int64(100)
-				err := indexManager.SetOffset(key, offset)
+				offset := Index{0, 100}
+				err := indexManager.SetOffset(key, offset.Offset, offset.Segment)
+				assert.NoError(t, err)
+
+				newOffset, exists := indexManager.GetOffset(key)
+				assert.True(t, exists)
+				assert.Equal(t, offset, newOffset)
+			},
+		},
+		{
+			name: "Test SetOffset function for segment 1",
+			testFunc: func(t *testing.T, indexManager *IndexManager) {
+				key := "test_key"
+				offset := Index{1, 200}
+				err := indexManager.SetOffset(key, offset.Offset, offset.Segment)
 				assert.NoError(t, err)
 
 				newOffset, exists := indexManager.GetOffset(key)
