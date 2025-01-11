@@ -8,9 +8,10 @@ import (
 	"log"
 	"net"
 	"path/filepath"
-	fa "samurai-db/internal/file-adapter"
-	im "samurai-db/internal/index-manager"
-	sdb "samurai-db/internal/samurai-db"
+	fa "samurai-db/internal/file_adapter"
+	im "samurai-db/internal/index_manager"
+	sdb "samurai-db/internal/samuraidb"
+	sm "samurai-db/internal/segment_manager"
 	"strings"
 )
 
@@ -23,8 +24,9 @@ type RequestAction struct {
 func main() {
 	dir := filepath.Join("db")
 	fileAdapter := fa.NewAdapter(dir)
+	segmentManager := sm.NewSegmentManager(fileAdapter)
 	indexManager := im.NewIndexManager(fileAdapter)
-	db := sdb.NewSamuraiDB(fileAdapter, indexManager)
+	db := sdb.NewSamuraiDB(segmentManager, indexManager)
 
 	// Инициализация базы данных
 	if err := db.Init(); err != nil {
@@ -77,7 +79,6 @@ func handleConnection(conn net.Conn, db *sdb.SamuraiDB) {
 			if err := db.Set(id, requestAction.Payload); err != nil {
 				log.Printf("Failed to set value: %v", err)
 				fmt.Fprintf(conn, "Error setting value\n")
-				continue
 			}
 
 			response := map[string]interface{}{
@@ -104,10 +105,8 @@ func handleConnection(conn net.Conn, db *sdb.SamuraiDB) {
 			response := map[string]interface{}{
 				"uuid": requestAction.UUID,
 			}
-			if payload, ok := data.(map[string]interface{}); ok {
-				for k, v := range payload {
-					response[k] = v
-				}
+			for k, v := range data {
+				response[k] = v
 			}
 
 			responseData, _ := json.Marshal(response)
