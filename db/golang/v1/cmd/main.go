@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	fa "samurai-db/v1/internal/file_adapter"
-	im "samurai-db/v1/internal/index_manager"
-	sdb "samurai-db/v1/internal/samuraidb"
-	sm "samurai-db/v1/internal/segment_manager"
+	fa "samurai-db/internal/file_adapter"
+	im "samurai-db/internal/index_manager"
+	sdb "samurai-db/internal/samuraidb"
+	sm "samurai-db/internal/segment_manager"
 
 	"github.com/google/uuid"
 )
