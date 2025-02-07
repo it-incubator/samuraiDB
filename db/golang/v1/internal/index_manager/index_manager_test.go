@@ -3,7 +3,7 @@ package indexmanager
 import (
 	"testing"
 
-	"samurai-db/internal/file_adapter"
+	"samurai-db/v1/internal/file_adapter"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -55,7 +55,7 @@ func TestIndexManager(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			dir := t.TempDir()
-			fileAdapter := fileadapter.NewAdapter(dir)
+			fileAdapter := fileadapter.fileadapter.NewAdapter(dir)
 
 			indexManager := NewIndexManager(fileAdapter)
 			err := indexManager.Init()

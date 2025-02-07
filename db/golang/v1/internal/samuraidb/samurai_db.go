@@ -1,8 +1,8 @@
 package samuraidb
 
 import (
-	im "samurai-db/internal/index_manager"
-	sm "samurai-db/internal/segment_manager"
+	im "samurai-db/v1/internal/index_manager"
+	sm "samurai-db/v1/internal/segment_manager"
 )
 
 //type SegmentManager interface {
