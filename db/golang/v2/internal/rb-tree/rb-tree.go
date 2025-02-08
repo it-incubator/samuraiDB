@@ -82,8 +82,7 @@ func (t *RBTree) InsertTree(key int) *Node {
 func (t *RBTree) find(key int) bool {
 	current := t.root
 
-	for current == nil {
-
+	for current != nil {
 		if current.key == key {
 			return true
 		}
@@ -99,4 +98,48 @@ func (t *RBTree) find(key int) bool {
 }
 
 func (t *RBTree) fixInsert(currentNode *Node) {
+	if currentNode.parent.color == BLACK {
+		return
+	}
+
+	if currentNode.parent.color == RED {
+		// если родитель красный, нужно проверить его "дядю"
+		parent := currentNode.parent
+
+		if parent == nil || parent.parent == nil {
+			return
+		}
+
+		grandParent := parent.parent
+		// нужно найти "дядю"
+		var uncle *Node
+		if grandParent.left == parent { // сравнивал сначала ключи, но кажется проще сравнивать ссылки
+			uncle = grandParent.right // если родитель текущей ноды слева, то дядя справа
+		} else {
+			uncle = grandParent.left
+		}
+		// если дядя красный, перекрашиваем и проверяем дерево выше, возможно там нужно делать так же изменения
+		if uncle != nil && uncle.color == RED {
+			parent.color = BLACK
+			uncle.color = BLACK
+			grandParent.color = RED
+			t.fixInsert(grandParent)
+			return
+		}
+		//здесь кажется нужно делать поворот(как определить какой?), похоже,
+		//что в этом случае измениться черная высота (хотя я ее никак не отслеживаю)
+		if uncle == nil || uncle.color == BLACK {
+
+		}
+
+	}
+}
+
+// хз пока как их реализовать
+func (t *RBTree) rotateLeft() {
+
+}
+
+func (t *RBTree) rotateRight() {
+
 }
