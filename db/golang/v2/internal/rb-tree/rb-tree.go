@@ -19,12 +19,6 @@ type RBTree struct {
 	root *Node
 }
 
-type Iterator struct {
-	tree            *RBTree
-	currentNode     *Node
-	currentPosition int // не уверен, что нужно знать
-}
-
 func New() *RBTree {
 	return &RBTree{}
 }
@@ -54,6 +48,7 @@ func (t *RBTree) InsertTree(key int) *Node {
 				right:  nil,
 				parent: parent,
 			}
+
 			if key >= parent.key {
 				parent.right = currentNode
 			}
@@ -118,7 +113,7 @@ func (t *RBTree) fixInsert(currentNode *Node) {
 		} else {
 			uncle = grandParent.left
 		}
-		// если дядя красный, перекрашиваем и проверяем дерево выше, возможно там нужно делать так же изменения
+		// если дядя красный, перекрашиваем и проверяем дерево выше, возможно там нужно делать также изменения
 		if uncle != nil && uncle.color == RED {
 			parent.color = BLACK
 			uncle.color = BLACK
@@ -126,20 +121,36 @@ func (t *RBTree) fixInsert(currentNode *Node) {
 			t.fixInsert(grandParent)
 			return
 		}
-		//здесь кажется нужно делать поворот(как определить какой?), похоже,
-		//что в этом случае измениться черная высота (хотя я ее никак не отслеживаю)
+
 		if uncle == nil || uncle.color == BLACK {
+			if parent == grandParent.left {
+				if currentNode == parent.right { //если текущая нода в правой ветке, то делаем левый поворот
+					t.rotateLeft(parent)
+					currentNode = parent
+					parent = currentNode.parent
+				}
+				t.rotateRight(grandParent) //иначе правый
+			}
 
+		} else {
+			if currentNode == parent.left { //если текущая нода в левой ветке, то делаем правый поворот
+				t.rotateRight(parent)
+				currentNode = parent
+				parent = currentNode.parent
+			}
+			t.rotateLeft(grandParent)
 		}
-
+		// случай когда не нужны повороты
+		parent.color = BLACK
+		grandParent.color = RED
 	}
 }
 
 // хз пока как их реализовать
-func (t *RBTree) rotateLeft() {
+func (t *RBTree) rotateLeft(node *Node) {
 
 }
 
-func (t *RBTree) rotateRight() {
+func (t *RBTree) rotateRight(node *Node) {
 
 }
