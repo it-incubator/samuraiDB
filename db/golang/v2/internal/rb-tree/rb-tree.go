@@ -148,9 +148,49 @@ func (t *RBTree) fixInsert(currentNode *Node) {
 
 // хз пока как их реализовать
 func (t *RBTree) rotateLeft(node *Node) {
+	rightChild := node.right
+	if rightChild == nil {
+		return
+	}
 
+	node.right = rightChild.left
+	if rightChild.left != nil {
+		rightChild.left.parent = node
+	}
+
+	rightChild.parent = node.parent
+	if node.parent == nil {
+		t.root = rightChild
+	} else if node == node.parent.left {
+		node.parent.left = rightChild
+	} else {
+		node.parent.right = rightChild
+	}
+
+	rightChild.left = node
+	node.parent = rightChild
 }
 
 func (t *RBTree) rotateRight(node *Node) {
+	leftChild := node.right
+	if leftChild == nil {
+		return
+	}
 
+	node.left = leftChild.right
+	if leftChild.right != nil {
+		leftChild.right.parent = node
+	}
+
+	leftChild.parent = node.parent
+	if node.parent == nil {
+		t.root = leftChild
+	} else if node == node.parent.right {
+		node.parent.right = leftChild
+	} else {
+		node.parent.left = leftChild
+	}
+
+	leftChild.right = node
+	node.parent = leftChild
 }
