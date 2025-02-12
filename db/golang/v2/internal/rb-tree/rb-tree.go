@@ -49,11 +49,11 @@ func (t *RBTree) InsertTree(key int) *Node {
 				parent: parent,
 			}
 
-			if key >= parent.key {
+			if key > parent.key {
 				parent.right = currentNode
 			}
 
-			if key <= parent.key {
+			if key < parent.key {
 				parent.left = currentNode
 			}
 			//похоже в этот момент нужно будет проводить балансировку
@@ -62,12 +62,10 @@ func (t *RBTree) InsertTree(key int) *Node {
 			return currentNode
 		}
 
-		if key >= current.key {
+		if key > current.key {
 			parent = current
 			current = current.right
-		}
-
-		if key <= current.key {
+		} else {
 			parent = current
 			current = current.left
 		}
@@ -93,11 +91,11 @@ func (t *RBTree) find(key int) bool {
 }
 
 func (t *RBTree) fixInsert(currentNode *Node) {
-	if currentNode.parent.color == BLACK {
+	if currentNode.parent != nil && currentNode.parent.color == BLACK {
 		return
 	}
 
-	if currentNode.parent.color == RED {
+	if currentNode.parent != nil && currentNode.parent.color == RED {
 		// если родитель красный, нужно проверить его "дядю"
 		parent := currentNode.parent
 
@@ -120,9 +118,7 @@ func (t *RBTree) fixInsert(currentNode *Node) {
 			grandParent.color = RED
 			t.fixInsert(grandParent)
 			return
-		}
-
-		if uncle == nil || uncle.color == BLACK {
+		} else {
 			if parent == grandParent.left {
 				if currentNode == parent.right { //если текущая нода в правой ветке, то делаем левый поворот
 					t.rotateLeft(parent)
@@ -130,23 +126,22 @@ func (t *RBTree) fixInsert(currentNode *Node) {
 					parent = currentNode.parent
 				}
 				t.rotateRight(grandParent) //иначе правый
+			} else {
+				if currentNode == parent.left { //если текущая нода в левой ветке, то делаем правый поворот
+					t.rotateRight(parent)
+					currentNode = parent
+					parent = currentNode.parent
+				}
+				t.rotateLeft(grandParent)
 			}
-
-		} else {
-			if currentNode == parent.left { //если текущая нода в левой ветке, то делаем правый поворот
-				t.rotateRight(parent)
-				currentNode = parent
-				parent = currentNode.parent
-			}
-			t.rotateLeft(grandParent)
 		}
 		// случай когда не нужны повороты
 		parent.color = BLACK
 		grandParent.color = RED
 	}
+	t.root.color = BLACK
 }
 
-// хз пока как их реализовать
 func (t *RBTree) rotateLeft(node *Node) {
 	rightChild := node.right
 	if rightChild == nil {
@@ -172,7 +167,7 @@ func (t *RBTree) rotateLeft(node *Node) {
 }
 
 func (t *RBTree) rotateRight(node *Node) {
-	leftChild := node.right
+	leftChild := node.left
 	if leftChild == nil {
 		return
 	}
