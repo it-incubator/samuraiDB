@@ -70,6 +70,38 @@ func TestRBTree_InsertTree(t *testing.T) {
 	})
 }
 
+func TestRBTree_fixInsert(t *testing.T) {
+	t.Run("Не нужна балансировка (родитель черный)", func(t *testing.T) {
+		tree, root, childLeft := createSimpleTree()
+
+		tree.fixInsert(childLeft)
+
+		require.Equal(t, BLACK, root.color, "Корень должен оставаться черным")
+		require.Equal(t, RED, childLeft.color, "Дочерний узел должен оставаться красного цвета")
+		require.Equal(t, root, childLeft.parent, "Родитель дочернего узла не должен измениться")
+		require.Equal(t, childLeft, root.left, "Дочерний узел должен быть левым потомком корня")
+		require.Nil(t, root.right, "Правый узел должен быть nil")
+	})
+
+	t.Run("Должны перекраситься ноды (родитель и дядя красные)", func(t *testing.T) {
+		tree, root, childLeft, childRight, newNode := createRecoloringTree()
+
+		// На этом этапе родитель (childRight) и дядя (childLeft) красные
+		tree.fixInsert(newNode)
+
+		// Ожидаем, что после перекрашивания:
+		// - Родитель (childRight) и дядя (childLeft) станут черными
+		// - Дедушка (root) временно станет красным, но затем fixInsert приведет его к черному
+		require.Equal(t, BLACK, root.color, "Корень должен оставаться черным")
+		require.Equal(t, BLACK, childLeft.color, "Дядя должен стать черным")
+		require.Equal(t, BLACK, childRight.color, "Родитель должен стать черным")
+		require.Equal(t, root, childLeft.parent, "Родитель дочернего узла не должен измениться")
+		require.Equal(t, root, childRight.parent, "Родитель дочернего узла не должен измениться")
+		require.Equal(t, childLeft, root.left, "Левая нода должна быть левым потомком корня")
+		require.Equal(t, childRight, newNode.parent, "Новая нода должна быть потомком правой ноды")
+		require.NotNil(t, root.right, "Правый узел не должен быть nil")
+	})
+}
 func checkRBInvariants(tree *RBTree) error {
 	if tree.root == nil {
 		return nil
@@ -90,4 +122,49 @@ func treeToString(node *Node, indent string) string {
 	result += treeToString(node.left, indent+"  ")
 	result += treeToString(node.right, indent+"  ")
 	return result
+}
+
+func createSimpleTree() (tree *RBTree, root, childLeft *Node) {
+	tree = New()
+	root = &Node{
+		key:   10,
+		color: BLACK,
+	}
+	childLeft = &Node{
+		key:   5,
+		color: RED,
+	}
+	root.left = childLeft
+	childLeft.parent = root
+	tree.root = root
+	return
+}
+
+func createRecoloringTree() (tree *RBTree, root, childLeft, childRight, newNode *Node) {
+	tree = New()
+	root = &Node{
+		key:   10,
+		color: BLACK,
+	}
+	childLeft = &Node{
+		key:   5,
+		color: RED,
+	}
+	childRight = &Node{
+		key:   15,
+		color: RED,
+	}
+	root.left = childLeft
+	root.right = childRight
+	childLeft.parent = root
+	childRight.parent = root
+	tree.root = root
+
+	newNode = &Node{
+		key:    20,
+		color:  RED,
+		parent: childRight,
+	}
+	childRight.right = newNode
+	return
 }
