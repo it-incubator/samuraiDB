@@ -13,7 +13,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 	t.Run("Создаем корень", func(t *testing.T) {
 		node10 := tree.InsertTree(10)
 
-		t.Log("Структура дерева после вставки узла 10:", treeToString(tree.root, ""))
+		t.Logf("Структура дерева после вставки узла 10:\n%s", treeToString(tree.root, ""))
 
 		require.Equal(t, BLACK, node10.color, "Корень должен быть черным", node10.color)
 	})
@@ -21,7 +21,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 	t.Run("Вставка ребенка вправо", func(t *testing.T) {
 		node20 := tree.InsertTree(20)
 
-		t.Log("Структура дерева после вставки узла 20:", treeToString(tree.root, ""))
+		t.Logf("Структура дерева после вставки узла 20:\n%s", treeToString(tree.root, ""))
 
 		require.NotNil(t, node20)
 		require.Equal(t, 20, node20.key, "Узел должен иметь ключ 20")
@@ -33,7 +33,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 	t.Run("Вставка ребенка влево", func(t *testing.T) {
 		node3 := tree.InsertTree(3)
 
-		t.Log("Структура дерева после вставки узла 3:", treeToString(tree.root, ""))
+		t.Logf("Структура дерева после вставки узла 3:\n%s", treeToString(tree.root, ""))
 
 		require.NotNil(t, node3)
 		require.Equal(t, 3, node3.key, "Узел должен иметь ключ 3")
@@ -45,7 +45,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 	t.Run("Вставляем дополнительные узлы и проверяем балансировку", func(t *testing.T) {
 		node30 := tree.InsertTree(30)
 
-		t.Log("Структура дерева после вставки узла 30:", treeToString(tree.root, ""))
+		t.Logf("Структура дерева после вставки узла 30:\n%s", treeToString(tree.root, ""))
 
 		require.NotNil(t, node30)
 		require.Equal(t, 30, node30.key)
@@ -54,7 +54,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 
 		node40 := tree.InsertTree(40)
 
-		t.Log("Структура дерева после вставки узла 40:", treeToString(tree.root, ""))
+		t.Logf("Структура дерева после вставки узла 40:\n%s", treeToString(tree.root, ""))
 
 		require.NotNil(t, node40)
 		require.Equal(t, 40, node40.key)
@@ -101,6 +101,47 @@ func TestRBTree_fixInsert(t *testing.T) {
 		require.Equal(t, childRight, newNode.parent, "Новая нода должна быть потомком правой ноды")
 		require.NotNil(t, root.right, "Правый узел не должен быть nil")
 	})
+
+	t.Run("Должен произойти левый поворот, а затем правый поворот", func(t *testing.T) {
+		tree, _, _, newNode := createLeftRotateTree()
+		//сценарий когда родитель слева от корня, а новая нода правый ребенок
+		t.Logf("Структура дерева перед балансировкой:\n%s", treeToString(tree.root, ""))
+
+		tree.fixInsert(newNode)
+		t.Logf("Cтруктура дерева после балансировкой:\n%s", treeToString(tree.root, ""))
+		// Ожидаем, что произойдёт левый поворот на родителе, затем правый поворот на корне
+		// Итоговая структура должна стать:
+		//   Новый корень с ключом 7 (черный),
+		//   левый потомок – нода с ключом 5,
+		//   правый потомок – нода с ключом 10.
+		require.Equal(t, 7, tree.root.key, "Новый корень должен иметь ключ 7")
+		require.Equal(t, BLACK, tree.root.color, "Новый корень должен быть черным")
+		require.NotNil(t, tree.root.left, "Новый корень должен иметь левую ноду")
+		require.Equal(t, 5, tree.root.left.key, "Левая нода должна иметь ключ 5")
+		require.NotNil(t, tree.root.right, "Новый корень должен иметь правую ноду")
+		require.Equal(t, 10, tree.root.right.key, "Правая нода должна иметь ключ 10")
+	})
+
+	t.Run("Должен произойти правый поворот, а затем левый поворот", func(t *testing.T) {
+		//Родитель справа от корня, новая нода – левый ребёнок родителя
+		tree, _, _, newNode := createRightRotateTree()
+		t.Logf("Структура дерева перед балансировкой:\n%s", treeToString(tree.root, ""))
+
+		tree.fixInsert(newNode)
+		t.Logf("Структура дерева после балансировкой:\n%s", treeToString(tree.root, ""))
+
+		// Ожидаем, что произойдёт правый поворот на родителе, затем левый поворот на корне
+		// Итоговая структура должна стать:
+		//   Новый корень с ключом 13 (черный),
+		//   левый потомок – нода с ключом 10,
+		//   правый потомок – нода с ключом 15
+		require.Equal(t, 13, tree.root.key, "Новый корень должен иметь ключ 13")
+		require.Equal(t, BLACK, tree.root.color, "Новый корень должен быть черным")
+		require.NotNil(t, tree.root.left, "Новый корень должен иметь левую ноду")
+		require.Equal(t, 10, tree.root.left.key, "Левая нода должна иметь ключ 10")
+		require.NotNil(t, tree.root.right, "Новый корень должен иметь правую ноду")
+		require.Equal(t, 15, tree.root.right.key, "Правая нода должна иметь ключ 15")
+	})
 }
 func checkRBInvariants(tree *RBTree) error {
 	if tree.root == nil {
@@ -118,7 +159,15 @@ func treeToString(node *Node, indent string) string {
 	if node == nil {
 		return indent + "nil\n"
 	}
-	result := indent + fmt.Sprintf("Key: %d, Color: %s\n", node.key, node.color)
+	var color string
+
+	if node.color == RED {
+		color = "🔴"
+	} else {
+		color = "⚫️"
+	}
+
+	result := indent + fmt.Sprintf("Key: %d, Color: %s\n", node.key, color)
 	result += treeToString(node.left, indent+"  ")
 	result += treeToString(node.right, indent+"  ")
 	return result
@@ -166,5 +215,55 @@ func createRecoloringTree() (tree *RBTree, root, childLeft, childRight, newNode 
 		parent: childRight,
 	}
 	childRight.right = newNode
+	return
+}
+
+func createLeftRotateTree() (tree *RBTree, root, parent, newNode *Node) {
+	// Родитель – левый ребёнок, новая нода вставляется как правый ребёнок родителя
+	tree = New()
+	root = &Node{
+		key:   10,
+		color: BLACK,
+	}
+	parent = &Node{
+		key:   5,
+		color: RED,
+	}
+	root.left = parent
+	parent.parent = root
+	tree.root = root
+
+	// newNode вставляется как правый ребёнок родителя
+	newNode = &Node{
+		key:    7,
+		color:  RED,
+		parent: parent,
+	}
+	parent.right = newNode
+	return
+}
+
+func createRightRotateTree() (tree *RBTree, root, parent, newNode *Node) {
+	//Родитель – правый ребёнок, новая нода вставляется как левый ребёнок родителя
+	tree = New()
+	root = &Node{
+		key:   10,
+		color: BLACK,
+	}
+	parent = &Node{
+		key:   15,
+		color: RED,
+	}
+	root.right = parent
+	parent.parent = root
+	tree.root = root
+
+	// newNode вставляется как левый ребёнок родителя.
+	newNode = &Node{
+		key:    13,
+		color:  RED,
+		parent: parent,
+	}
+	parent.left = newNode
 	return
 }
