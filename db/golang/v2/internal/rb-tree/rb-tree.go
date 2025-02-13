@@ -189,3 +189,22 @@ func (t *RBTree) rotateRight(node *Node) {
 	leftChild.right = node
 	node.parent = leftChild
 }
+
+func (t *RBTree) findNode(key int) *Node {
+
+	current := t.root
+
+	for current != nil {
+		if current.key == key {
+			return current
+		}
+
+		if key > current.key {
+			current = current.right
+		} else {
+			current = current.left
+		}
+
+	}
+	return nil
+}

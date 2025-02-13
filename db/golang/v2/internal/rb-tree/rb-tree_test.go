@@ -143,6 +143,37 @@ func TestRBTree_fixInsert(t *testing.T) {
 		require.Equal(t, 15, tree.root.right.key, "Правая нода должна иметь ключ 15")
 	})
 }
+
+func TestRBTree_findNode(t *testing.T) {
+	t.Run("Должен вернуть nil если дерево пустое", func(t *testing.T) {
+		tree := New()
+		res := tree.findNode(1)
+
+		require.Nil(t, res, "Дерево пустое")
+	})
+
+	t.Run("Должен найти ноду по ключу", func(t *testing.T) {
+		tree, root, childLeft := createSimpleTree()
+		res := tree.findNode(childLeft.key)
+		t.Logf("Структура дерева:\n%s", treeToString(tree.root, ""))
+
+		require.NotNil(t, root, "У дерева есть корень")
+		require.NotNil(t, root.left, "У дерева есть левый ребенок")
+		require.Equal(t, res.key, childLeft.key, "Функция должна вернуть ноду с искомым ключам")
+	})
+
+	t.Run("Должен вернуть nil если такой ноды нет", func(t *testing.T) {
+		tree, root, _ := createSimpleTree()
+		res := tree.findNode(999)
+		t.Logf("Структура дерева:\n%s", treeToString(tree.root, ""))
+
+		require.NotNil(t, root, "У дерева есть корень")
+		require.NotNil(t, root.left, "У дерева есть левый ребенок")
+		require.Nil(t, res, "Функция должна вернуть nil ")
+	})
+
+}
+
 func checkRBInvariants(tree *RBTree) error {
 	if tree.root == nil {
 		return nil
