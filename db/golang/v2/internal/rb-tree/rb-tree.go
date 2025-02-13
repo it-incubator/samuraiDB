@@ -3,10 +3,6 @@ package rb_tree
 const RED = "Red"
 const BLACK = "Black"
 
-type Color struct {
-	Red   string
-	Black string
-}
 type Node struct {
 	key    int
 	color  string
@@ -191,20 +187,17 @@ func (t *RBTree) rotateRight(node *Node) {
 }
 
 func (t *RBTree) findNode(key int) *Node {
-
 	current := t.root
 
 	for current != nil {
 		if current.key == key {
 			return current
 		}
-
 		if key > current.key {
 			current = current.right
 		} else {
 			current = current.left
 		}
-
 	}
 	return nil
 }

@@ -172,6 +172,17 @@ func TestRBTree_findNode(t *testing.T) {
 		require.Nil(t, res, "Функция должна вернуть nil ")
 	})
 
+	t.Run("Проверяем корректный поиск если ключ является ключом корневой ноды", func(t *testing.T) {
+		tree, root, _ := createSimpleTree()
+		res := tree.findNode(root.key)
+		t.Logf("Структура дерева:\n%s", treeToString(tree.root, ""))
+
+		require.NotNil(t, root, "У дерева есть корень")
+		require.NotNil(t, root.left, "У дерева есть левый ребенок")
+		t.Log("Искомый ключ ->", res.key)
+		require.Equal(t, res.key, root.key, "Функция должна вернуть ноду с искомым ключам")
+	})
+
 }
 
 func checkRBInvariants(tree *RBTree) error {
