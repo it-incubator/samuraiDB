@@ -201,3 +201,75 @@ func (t *RBTree) findNode(key int) *Node {
 	}
 	return nil
 }
+
+func (t *RBTree) Delete(key int) {
+	target := t.findNode(key)
+	if target == nil {
+		return
+	}
+
+	originalColor := target.color
+	var nodeToFix *Node
+
+	// кейс когда у target один ребенок
+	if target.left == nil || target.right == nil {
+		nodeToFix = t.deleteSingleChild(target)
+	} else {
+		// кейс, с двумя детьми
+		nodeToFix = t.deleteTwoChildren(target, &originalColor)
+	}
+
+	if originalColor == BLACK {
+		t.fixDelete(nodeToFix)
+	}
+}
+
+func (t *RBTree) deleteSingleChild(target *Node) *Node {
+	var child *Node
+	if target.left != nil {
+		child = target.left
+	} else {
+		child = target.right
+	}
+	t.transplant(target, child)
+	return child
+}
+
+// deleteTwoChildren обрабатывает случай, когда у узла target два ребенка
+// он находит наследника (минимальный узел правого поддерева) -> заменяет target наследником -> возвращает узел
+// ‼️ для него может потребоваться балансировка и при этом originalColor нужно обновить цветом наследника.
+func (t *RBTree) deleteTwoChildren(target *Node, originalColor *string) *Node {
+	// ищем наследника
+	successor := target.right
+	for successor.left != nil {
+		successor = successor.left
+	}
+
+	*originalColor = successor.color
+	replaceNode := successor.right
+	//todo думаю стоит написать комментарии что происходит в коде ниже
+	if successor.parent != target {
+		t.transplant(successor, successor.right)
+		successor.right = target.right
+		if successor.right != nil {
+			successor.right.parent = successor
+		}
+	}
+
+	t.transplant(target, successor)
+	successor.left = target.left
+	if successor.left != nil {
+		successor.left.parent = successor
+	}
+	successor.color = target.color
+
+	return replaceNode
+}
+
+func (t *RBTree) fixDelete(node *Node) {
+
+}
+
+func (t *RBTree) transplant(node *Node, node2 *Node) {
+
+}

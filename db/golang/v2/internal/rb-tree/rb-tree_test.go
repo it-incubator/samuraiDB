@@ -182,7 +182,14 @@ func TestRBTree_findNode(t *testing.T) {
 		t.Log("Искомый ключ ->", res.key)
 		require.Equal(t, res.key, root.key, "Функция должна вернуть ноду с искомым ключам")
 	})
+}
 
+func BenchmarkRBTree_InsertTree(b *testing.B) {
+	b.ReportAllocs()
+	tree := New()
+	for i := 0; i < b.N; i++ {
+		tree.InsertTree(i)
+	}
 }
 
 func checkRBInvariants(tree *RBTree) error {
