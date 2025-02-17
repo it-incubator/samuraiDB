@@ -270,6 +270,18 @@ func (t *RBTree) fixDelete(node *Node) {
 
 }
 
-func (t *RBTree) transplant(node *Node, node2 *Node) {
-
+func (t *RBTree) transplant(target, replacement *Node) {
+	// кейс когда target корень
+	if target.parent == nil {
+		t.root = replacement
+		// определяем в каком узле происходит замена
+	} else if target.parent.left != target {
+		target.parent.left = replacement
+	} else {
+		target.parent.right = replacement
+	}
+	// обмен родителями
+	if replacement != nil {
+		replacement.parent = target.parent
+	}
 }
