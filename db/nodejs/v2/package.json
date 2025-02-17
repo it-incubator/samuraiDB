@@ -4,7 +4,8 @@
   "main": "src/index.ts",
   "scripts": {
     "test": "jest",
-    "start:debug": "nodemon --inspect-brk src/index.ts",
+    "start:debug-start": "nodemon --inspect-brk ./api/server.ts",
+    "start:debug": "nodemon --debug ./api/server.ts",
     "start:dev": "nodemon"
   },
   "author": "",
