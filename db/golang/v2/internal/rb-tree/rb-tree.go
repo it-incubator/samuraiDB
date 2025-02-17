@@ -68,24 +68,6 @@ func (t *RBTree) InsertTree(key int) *Node {
 	}
 }
 
-func (t *RBTree) find(key int) bool {
-	current := t.root
-
-	for current != nil {
-		if current.key == key {
-			return true
-		}
-
-		if key > current.key {
-			current = current.right
-		} else {
-			current = current.left
-		}
-
-	}
-	return false
-}
-
 func (t *RBTree) fixInsert(currentNode *Node) {
 	if currentNode.parent != nil && currentNode.parent.color == BLACK {
 		return
@@ -297,10 +279,8 @@ func (t *RBTree) fixDeleteLeft(currentNode *Node) {
 	}
 
 	// брат чёрный, и оба его ребёнка чёрные
-	if (sibling.left == nil || sibling.left.color == BLACK) &&
-		(sibling.right == nil || sibling.right.color == BLACK) {
-		sibling.color = RED
-		currentNode = parent
+	if handled, newCurrent := processBlackSibling(sibling, parent, currentNode); handled {
+		currentNode = newCurrent
 		return
 	}
 
@@ -341,10 +321,8 @@ func (t *RBTree) fixDeleteRight(currentNode *Node) {
 	}
 
 	// брат чёрный, и оба его ребёнка чёрные
-	if (sibling.left == nil || sibling.left.color == BLACK) &&
-		(sibling.right == nil || sibling.right.color == BLACK) {
-		sibling.color = RED
-		currentNode = parent
+	if handled, newCurrent := processBlackSibling(sibling, parent, currentNode); handled {
+		currentNode = newCurrent
 		return
 	}
 
@@ -382,4 +360,16 @@ func (t *RBTree) transplant(target, replacement *Node) {
 	if replacement != nil {
 		replacement.parent = target.parent
 	}
+}
+
+// processBlackSibling проверяет, что оба ребенка узла sibling отсутствуют или черные.
+// Если условие выполнено, функция устанавливает sibling в красный и возвращает true,
+// а также возвращает родителя (newCurrent) в качестве нового currentNode для балансировки.
+func processBlackSibling(sibling, parent *Node, currentNode *Node) (handled bool, newCurrent *Node) {
+	if (sibling.left == nil || sibling.left.color == BLACK) &&
+		(sibling.right == nil || sibling.right.color == BLACK) {
+		sibling.color = RED
+		return true, parent
+	}
+	return false, currentNode
 }
