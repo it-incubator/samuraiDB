@@ -266,8 +266,106 @@ func (t *RBTree) deleteTwoChildren(target *Node, originalColor *string) *Node {
 	return replaceNode
 }
 
-func (t *RBTree) fixDelete(node *Node) {
+func (t *RBTree) fixDelete(currentNode *Node) {
+	for currentNode != t.root && currentNode.color == BLACK {
+		if currentNode == currentNode.parent.left {
+			t.fixDeleteLeft(currentNode)
+		} else {
+			t.fixDeleteRight(currentNode)
+		}
+	}
+	// нужно для того, чтобы гарантировать, что корень всегда черный
+	//в процессе фикса после удаления можем перекрасить его в красный
+	currentNode.color = BLACK
+}
 
+func (t *RBTree) fixDeleteLeft(currentNode *Node) {
+	parent := currentNode.parent
+	sibling := parent.right
+	if sibling == nil {
+		// Если брата нет, просто поднимаемся вверх
+		currentNode = parent
+		return
+	}
+
+	// брат красный
+	if sibling.color == RED {
+		sibling.color = BLACK
+		parent.color = RED
+		t.rotateLeft(parent)
+		sibling = parent.right
+	}
+
+	// брат чёрный, и оба его ребёнка чёрные
+	if (sibling.left == nil || sibling.left.color == BLACK) &&
+		(sibling.right == nil || sibling.right.color == BLACK) {
+		sibling.color = RED
+		currentNode = parent
+		return
+	}
+
+	// брат чёрный, его правый ребёнок чёрный, а левый красный
+	if sibling.right == nil || sibling.right.color == BLACK {
+		if sibling.left != nil {
+			sibling.left.color = BLACK
+		}
+		sibling.color = RED
+		t.rotateRight(sibling)
+		sibling = parent.right
+	}
+
+	// брат чёрный и его правый ребёнок красный
+	sibling.color = parent.color
+	parent.color = BLACK
+	if sibling.right != nil {
+		sibling.right.color = BLACK
+	}
+	t.rotateLeft(parent)
+	currentNode = t.root
+}
+
+func (t *RBTree) fixDeleteRight(currentNode *Node) {
+	parent := currentNode.parent
+	sibling := parent.left
+	if sibling == nil {
+		currentNode = parent
+		return
+	}
+
+	// брат красный
+	if sibling.color == RED {
+		sibling.color = BLACK
+		parent.color = RED
+		t.rotateRight(parent)
+		sibling = parent.left
+	}
+
+	// брат чёрный, и оба его ребёнка чёрные
+	if (sibling.left == nil || sibling.left.color == BLACK) &&
+		(sibling.right == nil || sibling.right.color == BLACK) {
+		sibling.color = RED
+		currentNode = parent
+		return
+	}
+
+	// брат чёрный, его левый ребёнок чёрный, а правый красный
+	if sibling.left == nil || sibling.left.color == BLACK {
+		if sibling.right != nil {
+			sibling.right.color = BLACK
+		}
+		sibling.color = RED
+		t.rotateLeft(sibling)
+		sibling = parent.left
+	}
+
+	// брат чёрный и его левый ребёнок красный
+	sibling.color = parent.color
+	parent.color = BLACK
+	if sibling.left != nil {
+		sibling.left.color = BLACK
+	}
+	t.rotateRight(parent)
+	currentNode = t.root
 }
 
 func (t *RBTree) transplant(target, replacement *Node) {
