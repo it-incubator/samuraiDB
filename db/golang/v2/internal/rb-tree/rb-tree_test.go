@@ -184,6 +184,71 @@ func TestRBTree_findNode(t *testing.T) {
 	})
 }
 
+func TestRBTree_Delete(t *testing.T) {
+	t.Run("Удаление из пустого дерева", func(t *testing.T) {
+		tree := New()
+		t.Logf("Структура дерева:\n%s", treeToString(tree.root, ""))
+		tree.Delete(11)
+		require.Nil(t, tree.root, "Дерево должно остаться пустым")
+	})
+
+	t.Run("Удаление узла без детей", func(t *testing.T) {
+		tree := createLongTree()
+		t.Logf("Структура дерева до удаления:\n%s", treeToString(tree.root, "|"))
+		parent := tree.findNode(20).parent
+		tree.Delete(20)
+		node := tree.findNode(20)
+		require.Nil(t, node, "Удаляемая нода не должна существовать в дереве")
+		require.Equal(t, BLACK, parent.color, "Цвет родителя должен быть черным")
+	})
+
+	t.Run("Удаление узла с одним ребенком", func(t *testing.T) {
+		tree := createLongTree()
+		t.Logf("Структура дерева до удаления:\n%s", treeToString(tree.root, ""))
+		// вставляем узел, который станет родителем для дальнейшей проверки
+		newNode := tree.InsertTree(10)
+		require.Equal(t, RED, newNode.color, "Новый узел должен быть красного цвета")
+		parent := newNode.parent
+		require.Equal(t, BLACK, parent.color, "Родитель нового узла должен быть черного цвета")
+		// Удаляем узел, у которого только один ребенок
+		tree.Delete(9)
+		node := tree.findNode(9)
+		require.Nil(t, node, "Удаляемая нода не должна существовать в дереве")
+		// проверяем что балансировка отработала
+		require.Equal(t, BLACK, newNode.color, "После балансировки узел должен стать черным")
+
+	})
+
+	t.Run("Удаление узла с двумя детьми", func(t *testing.T) {
+		tree := createLongTree()
+		t.Logf("Структура дерева до удаления:\n%s", treeToString(tree.root, ""))
+		tree.Delete(15)
+		t.Logf("Структура дерева после удаления узла с двумя детьми:\n%s", treeToString(tree.root, ""))
+		node := tree.findNode(15)
+		require.Nil(t, node, "Удаляемый узел должен отсутствовать в дереве")
+	})
+
+	t.Run("Удаление корневого узла", func(t *testing.T) {
+		tree := createLongTree()
+		originalRootKey := tree.root.key
+		tree.Delete(originalRootKey)
+		t.Logf("Структура дерева после удаления корневого узла:\n%s", treeToString(tree.root, ""))
+		require.NotEqual(t, originalRootKey, tree.root.key, "Новый корень должен отличаться от удаленного")
+		require.Equal(t, BLACK, tree.root.color, "Новый корень должен быть черным")
+		require.NoError(t, checkRBInvariants(tree), "Инварианты RB-дерева нарушены")
+	})
+
+	t.Run("Последовательное удаление узлов", func(t *testing.T) {
+		tree := createLongTree()
+		//удаляем несколько узлов по одному.
+		for _, key := range []int{1, 5, 9, 13, 17} {
+			tree.Delete(key)
+			t.Logf("После удаления %d:\n%s", key, treeToString(tree.root, ""))
+			require.Nil(t, tree.findNode(key), "Удаленного узла нет в дереве %d", key)
+		}
+	})
+}
+
 func BenchmarkRBTree_InsertTree(b *testing.B) {
 	b.ReportAllocs()
 	tree := New()
@@ -217,8 +282,8 @@ func treeToString(node *Node, indent string) string {
 	}
 
 	result := indent + fmt.Sprintf("Key: %d, Color: %s\n", node.key, color)
-	result += treeToString(node.left, indent+"  ")
-	result += treeToString(node.right, indent+"  ")
+	result += treeToString(node.left, indent+"|--")
+	result += treeToString(node.right, indent+"|-")
 	return result
 }
 
@@ -315,4 +380,13 @@ func createRightRotateTree() (tree *RBTree, root, parent, newNode *Node) {
 	}
 	parent.left = newNode
 	return
+}
+
+func createLongTree() *RBTree {
+	arr := []int{11, 1, 12, 2, 13, 3, 14, 4, 15, 5, 16, 6, 17, 7, 18, 8, 19, 9, 20}
+	tree := New()
+	for i := 0; i < len(arr); i++ {
+		tree.InsertTree(arr[i])
+	}
+	return tree
 }
