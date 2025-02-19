@@ -1,5 +1,7 @@
 package rb_tree
 
+import "fmt"
+
 const RED = "Red"
 const BLACK = "Black"
 
@@ -184,172 +186,168 @@ func (t *RBTree) findNode(key int) *Node {
 	return nil
 }
 
+// Delete удаляет узел с указанным ключом из красно-чёрного дерева
+// сначала находит целевой узел, затем, если у него два потомка, заменяет его на предшественника,
+// после чего корректирует дерево, чтобы сохранить свойства красно-чёрного дерева.
 func (t *RBTree) Delete(key int) {
-	target := t.findNode(key)
-	if target == nil {
+	var childNode *Node
+	targetNode := t.findNode(key)
+	if targetNode == nil {
 		return
 	}
-
-	originalColor := target.color
-	var nodeToFix *Node
-	// кейс когда у target нет детей
-	if target.left == nil && target.right == nil {
-		if target == t.root {
-			t.root = nil
+	// если у узла два потомка, находим предшественника (это максимальный узел в левом поддереве)
+	if targetNode.left != nil && targetNode.right != nil {
+		predecessorNode := targetNode.left.findMaxNode()
+		targetNode.key = predecessorNode.key
+		targetNode = predecessorNode
+	}
+	// если у узла один ребенок
+	if targetNode.left == nil || targetNode.right == nil {
+		if targetNode.right == nil {
+			childNode = targetNode.left
 		} else {
-			if target.parent.left == target {
-				target.parent.left = nil
-			} else {
-				target.parent.right = nil
-			}
+			childNode = targetNode.right
 		}
+		// если удаляемый узел чёрный, требуется балансировка
+		if targetNode.color == BLACK {
+			targetNode.color = nodeColor(childNode)
+			t.propagateFixup(targetNode)
+		}
+		t.replaceNode(targetNode, childNode)
+		// если удалённый узел был корнем, новый узел (если он есть) должен быть чёрным
+		if targetNode.parent == nil && childNode != nil {
+			childNode.color = BLACK
+		}
+	}
+}
+
+// findMaxNode возвращает узел с максимальным ключом в поддереве,
+// перемещаясь к самому правому узлу.
+func (n *Node) findMaxNode() *Node {
+	if n == nil {
+		return nil
+	}
+	for n.right != nil {
+		n = n.right
+	}
+	return n
+}
+
+// propagateFixup обрабатывает случай удаления, когда узел не является корнем
+// если узел уже стал корневым, дальнейшая корректировка не требуется.
+func (t *RBTree) propagateFixup(deletedNode *Node) {
+	if deletedNode.parent == nil {
 		return
 	}
+	t.adjustRedSibling(deletedNode)
+}
 
-	// кейс когда у target один ребенок
-	if target.left == nil || target.right == nil {
-		nodeToFix = t.deleteSingleChild(target)
+// adjustRedSibling обрабатывает случай, когда "брат" (sibling) удалённого узла красный,
+// в этом случае происходит перекраска и поворот для поднятия проблемы выше по дереву
+func (t *RBTree) adjustRedSibling(deletedNode *Node) {
+	sibling := deletedNode.findSibling()
+	if nodeColor(sibling) == RED {
+		deletedNode.parent.color = RED
+		sibling.color = BLACK
+		if deletedNode == deletedNode.parent.left {
+			t.rotateLeft(deletedNode.parent)
+		} else {
+			t.rotateRight(deletedNode.parent)
+		}
+	}
+	t.balanceWithBlackNodes(deletedNode)
+}
+
+// balanceWithBlackNodes обрабатывает случай, когда родитель, брат и оба ребёнка брата чёрные.
+// В этом случае брат перекрашивается в красный, а алгоритм рекурсивно продолжается для родителя.
+func (t *RBTree) balanceWithBlackNodes(deletedNode *Node) {
+	sibling := deletedNode.findSibling()
+	if nodeColor(deletedNode.parent) == BLACK &&
+		nodeColor(sibling) == BLACK &&
+		nodeColor(sibling.left) == BLACK &&
+		nodeColor(sibling.right) == BLACK {
+		sibling.color = RED
+		t.propagateFixup(deletedNode.parent)
 	} else {
-		// кейс, с двумя детьми
-		nodeToFix = t.deleteTwoChildren(target, &originalColor)
-	}
-
-	if originalColor == BLACK && nodeToFix != nil {
-		t.fixDelete(nodeToFix)
+		t.adjustRedParent(deletedNode)
 	}
 }
 
-func (t *RBTree) fixDelete(currentNode *Node) {
-	for currentNode != nil && currentNode != t.root && currentNode.color == BLACK {
-		if currentNode == currentNode.parent.left {
-			currentNode = t.fixDeleteLeft(currentNode)
-		} else {
-			currentNode = t.fixDeleteRight(currentNode)
-		}
-	}
-	if currentNode != nil {
-		currentNode.color = BLACK
+// adjustRedParent обрабатывает случай, когда родитель красный, а брат и его потомки — чёрные.
+// Здесь происходит обмен цвета между родителем и братом.
+func (t *RBTree) adjustRedParent(deletedNode *Node) {
+	sibling := deletedNode.findSibling()
+	if nodeColor(deletedNode.parent) == RED &&
+		nodeColor(sibling) == BLACK &&
+		nodeColor(sibling.left) == BLACK &&
+		nodeColor(sibling.right) == BLACK {
+		sibling.color = RED
+		deletedNode.parent.color = BLACK
+	} else {
+		t.rotateSiblingForBalance(deletedNode)
 	}
 }
 
-func (t *RBTree) fixDeleteLeft(currentNode *Node) *Node {
-	parent := currentNode.parent
-	sibling := parent.right
-	if sibling == nil {
-		return parent
-	}
-
-	// брат красный
-	if sibling.color == RED {
-		sibling.color = BLACK
-		parent.color = RED
-		t.rotateLeft(parent)
-		sibling = parent.right
-	}
-
-	// оба ребёнка брата чёрные
-	if (sibling.left == nil || sibling.left.color == BLACK) &&
-		(sibling.right == nil || sibling.right.color == BLACK) {
+// rotateSiblingForBalance обрабатывает случай, когда брат чёрный, а один из его детей красный,
+// что позволяет выполнить поворот и подготовить ситуацию для финальной балансировки
+func (t *RBTree) rotateSiblingForBalance(deletedNode *Node) {
+	sibling := deletedNode.findSibling()
+	if deletedNode == deletedNode.parent.left &&
+		nodeColor(sibling) == BLACK &&
+		nodeColor(sibling.left) == RED &&
+		nodeColor(sibling.right) == BLACK {
 		sibling.color = RED
-		return parent
-	}
-
-	// правый ребёнок брата чёрный, а левый красный, делаем правый поворот на брате
-	if sibling.right == nil || sibling.right.color == BLACK {
-		if sibling.left != nil {
-			sibling.left.color = BLACK
-		}
-		sibling.color = RED
-		t.rotateRight(sibling)
-		sibling = parent.right
-	}
-
-	// правый ребёнок брата красный, делаем левый поворот на родителе
-	sibling.color = parent.color
-	parent.color = BLACK
-	if sibling.right != nil {
-		sibling.right.color = BLACK
-	}
-	t.rotateLeft(parent)
-	return t.root
-}
-
-func (t *RBTree) fixDeleteRight(currentNode *Node) *Node {
-	parent := currentNode.parent
-	sibling := parent.left
-	if sibling == nil {
-		return parent
-	}
-
-	if sibling.color == RED {
-		sibling.color = BLACK
-		parent.color = RED
-		t.rotateRight(parent)
-		sibling = parent.left
-	}
-
-	if (sibling.left == nil || sibling.left.color == BLACK) &&
-		(sibling.right == nil || sibling.right.color == BLACK) {
-		sibling.color = RED
-		return parent
-	}
-
-	if sibling.left == nil || sibling.left.color == BLACK {
-		if sibling.right != nil {
-			sibling.right.color = BLACK
-		}
-		sibling.color = RED
-		t.rotateLeft(sibling)
-		sibling = parent.left
-	}
-
-	sibling.color = parent.color
-	parent.color = BLACK
-	if sibling.left != nil {
 		sibling.left.color = BLACK
+		t.rotateRight(sibling)
+	} else if deletedNode == deletedNode.parent.right &&
+		nodeColor(sibling) == BLACK &&
+		nodeColor(sibling.right) == RED &&
+		nodeColor(sibling.left) == BLACK {
+		sibling.color = RED
+		sibling.right.color = BLACK
+		t.rotateLeft(sibling)
 	}
-	t.rotateRight(parent)
-	return t.root
+	t.finalizeDeletionBalance(deletedNode)
 }
 
-func (t *RBTree) deleteSingleChild(target *Node) *Node {
-	var child *Node
-	if target.left != nil {
-		child = target.left
+// finalizeDeletionBalance выполняет окончательную корректировку, устанавливая цвета брата и родителя
+// и выполняет поворот для восстановления свойств красно-чёрного дерева
+func (t *RBTree) finalizeDeletionBalance(deletedNode *Node) {
+	sibling := deletedNode.findSibling()
+	sibling.color = nodeColor(deletedNode.parent)
+	deletedNode.parent.color = BLACK
+	if deletedNode == deletedNode.parent.left && nodeColor(sibling.right) == RED {
+		sibling.right.color = BLACK
+		t.rotateLeft(deletedNode.parent)
+	} else if nodeColor(sibling.left) == RED {
+		sibling.left.color = BLACK
+		t.rotateRight(deletedNode.parent)
+	}
+}
+
+func (node *Node) findSibling() *Node {
+	if node == nil || node.parent == nil {
+		return nil
+	}
+	if node == node.parent.left {
+		return node.parent.right
+	}
+	return node.parent.left
+}
+
+func (t *RBTree) replaceNode(oldNode, newNode *Node) {
+	if oldNode.parent == nil {
+		t.root = newNode
 	} else {
-		child = target.right
-	}
-	t.transplant(target, child)
-	return child
-}
-
-// deleteTwoChildren обрабатывает случай, когда у узла target два ребенка
-// он находит наследника -> заменяет target наследником -> возвращает узел
-// ‼️ для него может потребоваться балансировка и при этом originalColor нужно обновить цветом наследника.
-func (t *RBTree) deleteTwoChildren(target *Node, originalColor *string) *Node {
-	successor := target.left
-	for successor.right != nil {
-		successor = successor.right
-	}
-	*originalColor = successor.color
-	replaceNode := successor.left
-
-	if successor.parent != target {
-		t.transplant(successor, successor.left)
-		successor.left = target.left
-		if successor.left != nil {
-			successor.left.parent = successor
+		if oldNode == oldNode.parent.left {
+			oldNode.parent.left = newNode
+		} else {
+			oldNode.parent.right = newNode
 		}
 	}
-
-	t.transplant(target, successor)
-	successor.right = target.right
-	if successor.right != nil {
-		successor.right.parent = successor
+	if newNode != nil {
+		newNode.parent = oldNode.parent
 	}
-	successor.color = target.color
-
-	return replaceNode
 }
 
 func (t *RBTree) transplant(target, replacement *Node) {
@@ -365,5 +363,55 @@ func (t *RBTree) transplant(target, replacement *Node) {
 	// обмен родителями
 	if replacement != nil {
 		replacement.parent = target.parent
+	}
+}
+
+func nodeColor(node *Node) string {
+	if node == nil {
+		return BLACK
+	}
+	return node.color
+}
+
+func (t *RBTree) Print() {
+	if t.root == nil {
+		fmt.Println("[Empty tree]")
+		return
+	}
+	t.printNode(t.root, "", true)
+}
+
+func (t *RBTree) printNode(node *Node, prefix string, isTail bool) {
+	if node == nil {
+		return
+	}
+
+	// Добавляем указатели на детей
+	pointers := "├── "
+	if isTail {
+		pointers = "└── "
+	}
+
+	// Формируем цветовую метку
+	color := "⚫️"
+	if node.color == RED {
+		color = "🔴"
+	}
+
+	// Выводим текущий узел
+	fmt.Printf("%s%s%d(%s)\n", prefix, pointers, node.key, color)
+
+	// Вычисляем новый префикс для детей
+	newPrefix := prefix
+	if isTail {
+		newPrefix += "    "
+	} else {
+		newPrefix += "│   "
+	}
+
+	// Рекурсивно выводим детей
+	if node.left != nil || node.right != nil {
+		t.printNode(node.right, newPrefix, false)
+		t.printNode(node.left, newPrefix, true)
 	}
 }
