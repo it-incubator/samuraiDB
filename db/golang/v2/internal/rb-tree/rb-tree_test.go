@@ -200,6 +200,8 @@ func TestRBTree_Delete(t *testing.T) {
 		node := tree.findNode(20)
 		require.Nil(t, node, "Удаляемая нода не должна существовать в дереве")
 		require.Equal(t, BLACK, parent.color, "Цвет родителя должен быть черным")
+		require.NoError(t, checkRBInvariants(tree), "Инварианты RB-дерева нарушены после удаления %d")
+
 	})
 
 	t.Run("Удаление узла с одним ребенком", func(t *testing.T) {
@@ -216,6 +218,7 @@ func TestRBTree_Delete(t *testing.T) {
 		require.Nil(t, node, "Удаляемая нода не должна существовать в дереве")
 		// проверяем что балансировка отработала
 		require.Equal(t, BLACK, newNode.color, "После балансировки узел должен стать черным")
+		require.NoError(t, checkRBInvariants(tree), "Инварианты RB-дерева нарушены после удаления %d")
 
 	})
 
@@ -226,6 +229,8 @@ func TestRBTree_Delete(t *testing.T) {
 		t.Logf("Структура дерева после удаления узла с двумя детьми:\n%s", treeToString(tree.root, ""))
 		node := tree.findNode(15)
 		require.Nil(t, node, "Удаляемый узел должен отсутствовать в дереве")
+		require.NoError(t, checkRBInvariants(tree), "Инварианты RB-дерева нарушены после удаления")
+
 	})
 
 	t.Run("Удаление корневого узла", func(t *testing.T) {
@@ -245,6 +250,7 @@ func TestRBTree_Delete(t *testing.T) {
 			tree.Delete(key)
 			t.Logf("После удаления %d:\n%s", key, treeToString(tree.root, ""))
 			require.Nil(t, tree.findNode(key), "Удаленного узла нет в дереве %d", key)
+			require.NoError(t, checkRBInvariants(tree), "Инварианты RB-дерева нарушены после удаления %d", key)
 		}
 	})
 }
@@ -255,18 +261,6 @@ func BenchmarkRBTree_InsertTree(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		tree.InsertTree(i)
 	}
-}
-
-func checkRBInvariants(tree *RBTree) error {
-	if tree.root == nil {
-		return nil
-	}
-	if tree.root.color != BLACK {
-		return fmt.Errorf("корень должен быть черный")
-	}
-	//todo можно реализовать как доп проверку
-	// Можно проверить, что нет подряд красных узлов и что черная высота одинакова по всем пути рекурсивной проверки
-	return nil
 }
 
 func treeToString(node *Node, indent string) string {
@@ -389,4 +383,70 @@ func createLongTree() *RBTree {
 		tree.InsertTree(arr[i])
 	}
 	return tree
+}
+
+func checkRBInvariants(tree *RBTree) error {
+	if tree.root == nil {
+		return nil
+	}
+	// 1) Корень должен быть чёрным
+	if tree.root.color != BLACK {
+		return fmt.Errorf("корень не чёрный")
+	}
+	// 2) Проверить, что нет двух подряд красных узлов
+	if err := checkNoConsecutiveReds(tree.root); err != nil {
+		return err
+	}
+	// 3) Проверить равную "чёрную высоту" по всем путям
+	blackHeight := -1
+	if err := checkBlackHeight(tree.root, 0, &blackHeight); err != nil {
+		return err
+	}
+	return nil
+}
+
+// checkNoConsecutiveReds проверяет, что нет двух подряд красных узлов
+func checkNoConsecutiveReds(node *Node) error {
+	if node == nil {
+		return nil
+	}
+	if node.color == RED {
+		if (node.left != nil && node.left.color == RED) ||
+			(node.right != nil && node.right.color == RED) {
+			return fmt.Errorf("найдены два подряд красных узла: %v", node.key)
+		}
+	}
+	if err := checkNoConsecutiveReds(node.left); err != nil {
+		return err
+	}
+	if err := checkNoConsecutiveReds(node.right); err != nil {
+		return err
+	}
+	return nil
+}
+
+// checkBlackHeight проверяет, что все пути от корня до nil имеют одинаковую "чёрную высоту".
+func checkBlackHeight(node *Node, currentBlackCount int, reference *int) error {
+	if node == nil {
+		// дошли до nil-узла
+		if *reference == -1 {
+			*reference = currentBlackCount
+		} else if currentBlackCount != *reference {
+			return fmt.Errorf("нарушена равная черная высота: %d != %d", currentBlackCount, *reference)
+		}
+		return nil
+	}
+	// если узел чёрный, увеличиваем счётчик
+	nextBlackCount := currentBlackCount
+	if node.color == BLACK {
+		nextBlackCount++
+	}
+	// рекурсивно проверяем левую и правую ветви
+	if err := checkBlackHeight(node.left, nextBlackCount, reference); err != nil {
+		return err
+	}
+	if err := checkBlackHeight(node.right, nextBlackCount, reference); err != nil {
+		return err
+	}
+	return nil
 }
