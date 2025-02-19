@@ -1,15 +1,20 @@
 package rb_tree
 
-import "fmt"
+import (
+	"fmt"
+)
 
-func createSimpleTree() (tree *RBTree, root, childLeft *Node) {
-	tree = New()
-	root = &Node{
+func createSimpleTree() (tree *RBTree[int, string], root, childLeft *Node[int, string]) {
+	tree = New[int, string]()
+
+	root = &Node[int, string]{
 		key:   10,
+		data:  "data 10",
 		color: BLACK,
 	}
-	childLeft = &Node{
+	childLeft = &Node[int, string]{
 		key:   5,
+		data:  "data 5",
 		color: RED,
 	}
 	root.left = childLeft
@@ -18,18 +23,21 @@ func createSimpleTree() (tree *RBTree, root, childLeft *Node) {
 	return
 }
 
-func createRecoloringTree() (tree *RBTree, root, childLeft, childRight, newNode *Node) {
-	tree = New()
-	root = &Node{
+func createRecoloringTree() (tree *RBTree[int, string], root, childLeft, childRight, newNode *Node[int, string]) {
+	tree = New[int, string]()
+	root = &Node[int, string]{
 		key:   10,
+		data:  "data-10",
 		color: BLACK,
 	}
-	childLeft = &Node{
+	childLeft = &Node[int, string]{
 		key:   5,
+		data:  "data-5",
 		color: RED,
 	}
-	childRight = &Node{
+	childRight = &Node[int, string]{
 		key:   15,
+		data:  "data-15",
 		color: RED,
 	}
 	root.left = childLeft
@@ -38,8 +46,9 @@ func createRecoloringTree() (tree *RBTree, root, childLeft, childRight, newNode 
 	childRight.parent = root
 	tree.root = root
 
-	newNode = &Node{
+	newNode = &Node[int, string]{
 		key:    20,
+		data:   "data-20",
 		color:  RED,
 		parent: childRight,
 	}
@@ -47,15 +56,17 @@ func createRecoloringTree() (tree *RBTree, root, childLeft, childRight, newNode 
 	return
 }
 
-func createLeftRotateTree() (tree *RBTree, root, parent, newNode *Node) {
+func createLeftRotateTree() (tree *RBTree[int, string], root, parent, newNode *Node[int, string]) {
 	// Родитель – левый ребёнок, новая нода вставляется как правый ребёнок родителя
-	tree = New()
-	root = &Node{
+	tree = New[int, string]()
+	root = &Node[int, string]{
 		key:   10,
+		data:  "data-10",
 		color: BLACK,
 	}
-	parent = &Node{
+	parent = &Node[int, string]{
 		key:   5,
+		data:  "data-5",
 		color: RED,
 	}
 	root.left = parent
@@ -63,8 +74,9 @@ func createLeftRotateTree() (tree *RBTree, root, parent, newNode *Node) {
 	tree.root = root
 
 	// newNode вставляется как правый ребёнок родителя
-	newNode = &Node{
+	newNode = &Node[int, string]{
 		key:    7,
+		data:   "data-7",
 		color:  RED,
 		parent: parent,
 	}
@@ -72,15 +84,17 @@ func createLeftRotateTree() (tree *RBTree, root, parent, newNode *Node) {
 	return
 }
 
-func createRightRotateTree() (tree *RBTree, root, parent, newNode *Node) {
+func createRightRotateTree() (tree *RBTree[int, string], root, parent, newNode *Node[int, string]) {
 	//Родитель – правый ребёнок, новая нода вставляется как левый ребёнок родителя
-	tree = New()
-	root = &Node{
+	tree = New[int, string]()
+	root = &Node[int, string]{
 		key:   10,
+		data:  "data-10",
 		color: BLACK,
 	}
-	parent = &Node{
+	parent = &Node[int, string]{
 		key:   15,
+		data:  "data-15",
 		color: RED,
 	}
 	root.right = parent
@@ -88,8 +102,9 @@ func createRightRotateTree() (tree *RBTree, root, parent, newNode *Node) {
 	tree.root = root
 
 	// newNode вставляется как левый ребёнок родителя.
-	newNode = &Node{
+	newNode = &Node[int, string]{
 		key:    13,
+		data:   "data-13",
 		color:  RED,
 		parent: parent,
 	}
@@ -97,16 +112,16 @@ func createRightRotateTree() (tree *RBTree, root, parent, newNode *Node) {
 	return
 }
 
-func createLongTree() *RBTree {
+func createLongTree() *RBTree[int, string] {
 	arr := []int{11, 1, 12, 2, 13, 3, 14, 4, 15, 5, 16, 6, 17, 7, 18, 8, 19, 9, 20}
-	tree := New()
+	tree := New[int, string]()
 	for i := 0; i < len(arr); i++ {
-		tree.InsertTree(arr[i])
+		tree.InsertTree(arr[i], fmt.Sprintf("data-%d", i))
 	}
 	return tree
 }
 
-func checkRBInvariants(tree *RBTree) error {
+func checkRBInvariants(tree *RBTree[int, string]) error {
 	if tree.root == nil {
 		return nil
 	}
@@ -127,7 +142,7 @@ func checkRBInvariants(tree *RBTree) error {
 }
 
 // checkNoConsecutiveReds проверяет, что нет двух подряд красных узлов
-func checkNoConsecutiveReds(node *Node) error {
+func checkNoConsecutiveReds(node *Node[int, string]) error {
 	if node == nil {
 		return nil
 	}
@@ -147,7 +162,7 @@ func checkNoConsecutiveReds(node *Node) error {
 }
 
 // checkBlackHeight проверяет, что все пути от корня до nil имеют одинаковую "чёрную высоту".
-func checkBlackHeight(node *Node, currentBlackCount int, reference *int) error {
+func checkBlackHeight(node *Node[int, string], currentBlackCount int, reference *int) error {
 	if node == nil {
 		// дошли до nil-узла
 		if *reference == -1 {

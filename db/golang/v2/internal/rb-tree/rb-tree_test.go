@@ -1,16 +1,17 @@
 package rb_tree
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestRBTree_InsertTree(t *testing.T) {
-	tree := New()
+	tree := New[int, string]()
 
 	t.Run("Создаем корень", func(t *testing.T) {
-		node10 := tree.InsertTree(10)
+		node10 := tree.InsertTree(10, "data 10")
 
 		t.Log("Структура дерева после вставки узла 10: \n")
 		tree.Print()
@@ -19,7 +20,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 	})
 
 	t.Run("Вставка ребенка вправо", func(t *testing.T) {
-		node20 := tree.InsertTree(20)
+		node20 := tree.InsertTree(20, "data 20")
 
 		t.Log("Структура дерева после вставки узла 20: \n")
 		tree.Print()
@@ -32,7 +33,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 	})
 
 	t.Run("Вставка ребенка влево", func(t *testing.T) {
-		node3 := tree.InsertTree(3)
+		node3 := tree.InsertTree(3, "data-3")
 
 		t.Log("Структура дерева после вставки узла 3: \n")
 		tree.Print()
@@ -45,7 +46,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 	})
 
 	t.Run("Вставляем дополнительные узлы и проверяем балансировку", func(t *testing.T) {
-		node30 := tree.InsertTree(30)
+		node30 := tree.InsertTree(30, "data 10")
 
 		t.Log("Структура дерева после вставки узла 30: \n")
 		tree.Print()
@@ -55,7 +56,7 @@ func TestRBTree_InsertTree(t *testing.T) {
 		require.Equal(t, BLACK, node30.parent.color, "Родитель узла 30 должен быть черным", node30.parent.color)
 		require.Equal(t, BLACK, tree.root.color, "Корень должен быть черным", tree.root.color)
 
-		node40 := tree.InsertTree(40)
+		node40 := tree.InsertTree(40, "data 10")
 
 		t.Log("Структура дерева после вставки узла 40: \n")
 		tree.Print()
@@ -160,7 +161,7 @@ func TestRBTree_fixInsert(t *testing.T) {
 
 func TestRBTree_findNode(t *testing.T) {
 	t.Run("Должен вернуть nil если дерево пустое", func(t *testing.T) {
-		tree := New()
+		tree := New[int, string]()
 		res := tree.findNode(1)
 
 		require.Nil(t, res, "Дерево пустое")
@@ -203,7 +204,7 @@ func TestRBTree_findNode(t *testing.T) {
 
 func TestRBTree_Delete(t *testing.T) {
 	t.Run("Удаление из пустого дерева", func(t *testing.T) {
-		tree := New()
+		tree := New[int, string]()
 		t.Log("Структура дерева \n")
 		tree.Print()
 		tree.Delete(11)
@@ -226,7 +227,7 @@ func TestRBTree_Delete(t *testing.T) {
 	t.Run("Удаление узла с одним ребенком", func(t *testing.T) {
 		tree := createLongTree()
 		// вставляем узел, который станет родителем для дальнейшей проверки
-		newNode := tree.InsertTree(10)
+		newNode := tree.InsertTree(10, "data-10")
 		require.Equal(t, RED, newNode.color, "Новый узел должен быть красного цвета")
 		parent := newNode.parent
 		require.Equal(t, BLACK, parent.color, "Родитель нового узла должен быть черного цвета")
@@ -285,8 +286,8 @@ func TestRBTree_Delete(t *testing.T) {
 
 func BenchmarkRBTree_InsertTree(b *testing.B) {
 	b.ReportAllocs()
-	tree := New()
+	tree := New[int, string]()
 	for i := 0; i < b.N; i++ {
-		tree.InsertTree(i)
+		tree.InsertTree(i, fmt.Sprintf("data-%d", i))
 	}
 }
