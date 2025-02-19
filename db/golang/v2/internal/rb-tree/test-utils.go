@@ -1,122 +1,92 @@
 package rb_tree
 
 import (
+	"cmp"
 	"fmt"
 )
 
+func createNewTestNode[K cmp.Ordered, D any](key K, data D, color Color, parent *Node[K, D]) *Node[K, D] {
+	return &Node[K, D]{
+		key:    key,
+		data:   data,
+		color:  color,
+		parent: parent,
+	}
+}
+
+func buildTestTree[K cmp.Ordered, D any](setup func(tree *RBTree[K, D])) *RBTree[K, D] {
+	tree := New[K, D]()
+	setup(tree)
+	return tree
+}
+
 func createSimpleTree() (tree *RBTree[int, string], root, childLeft *Node[int, string]) {
-	tree = New[int, string]()
-
-	root = &Node[int, string]{
-		key:   10,
-		data:  "data 10",
-		color: BLACK,
-	}
-	childLeft = &Node[int, string]{
-		key:   5,
-		data:  "data 5",
-		color: RED,
-	}
-	root.left = childLeft
-	childLeft.parent = root
-	tree.root = root
+	tree = buildTestTree[int, string](func(tree *RBTree[int, string]) {
+		// Создаём корневой узел без родителя.
+		root = createNewTestNode(10, "data 10", BLACK, nil)
+		// Создаём левый дочерний узел с родителем root.
+		childLeft = createNewTestNode(5, "data 5", RED, root)
+		// Устанавливаем связь.
+		root.left = childLeft
+		tree.root = root
+	})
 	return
 }
 
-func createRecoloringTree() (tree *RBTree[int, string], root, childLeft, childRight, newNode *Node[int, string]) {
-	tree = New[int, string]()
-	root = &Node[int, string]{
-		key:   10,
-		data:  "data-10",
-		color: BLACK,
-	}
-	childLeft = &Node[int, string]{
-		key:   5,
-		data:  "data-5",
-		color: RED,
-	}
-	childRight = &Node[int, string]{
-		key:   15,
-		data:  "data-15",
-		color: RED,
-	}
-	root.left = childLeft
-	root.right = childRight
-	childLeft.parent = root
-	childRight.parent = root
-	tree.root = root
+func createRecoloringTree() (tree *RBTree[int, string], root, childLeft, childRight, node *Node[int, string]) {
+	tree = buildTestTree[int, string](func(tree *RBTree[int, string]) {
+		root = createNewTestNode(10, "data-10", BLACK, nil)
+		childLeft = createNewTestNode(5, "data-5", RED, root)
+		childRight = createNewTestNode(15, "data-15", RED, root)
+		root.left = childLeft
+		root.right = childRight
+		childLeft.parent = root
+		childRight.parent = root
+		tree.root = root
 
-	newNode = &Node[int, string]{
-		key:    20,
-		data:   "data-20",
-		color:  RED,
-		parent: childRight,
-	}
-	childRight.right = newNode
+		node = createNewTestNode(20, "data-20", RED, childRight)
+		childRight.right = node
+	})
 	return
 }
 
-func createLeftRotateTree() (tree *RBTree[int, string], root, parent, newNode *Node[int, string]) {
-	// Родитель – левый ребёнок, новая нода вставляется как правый ребёнок родителя
-	tree = New[int, string]()
-	root = &Node[int, string]{
-		key:   10,
-		data:  "data-10",
-		color: BLACK,
-	}
-	parent = &Node[int, string]{
-		key:   5,
-		data:  "data-5",
-		color: RED,
-	}
-	root.left = parent
-	parent.parent = root
-	tree.root = root
+func createLeftRotateTree() (tree *RBTree[int, string], root, parent, node *Node[int, string]) {
+	tree = buildTestTree[int, string](func(tree *RBTree[int, string]) {
+		root = createNewTestNode(10, "data-10", BLACK, nil)
+		// Родитель здесь — левый ребёнок корня.
+		parent = createNewTestNode(5, "data-5", RED, root)
+		root.left = parent
+		parent.parent = root
+		tree.root = root
 
-	// newNode вставляется как правый ребёнок родителя
-	newNode = &Node[int, string]{
-		key:    7,
-		data:   "data-7",
-		color:  RED,
-		parent: parent,
-	}
-	parent.right = newNode
+		// createNewTestNode вставляется как правый ребёнок родителя.
+		node = createNewTestNode(7, "data-7", RED, parent)
+		parent.right = node
+	})
 	return
 }
 
-func createRightRotateTree() (tree *RBTree[int, string], root, parent, newNode *Node[int, string]) {
-	//Родитель – правый ребёнок, новая нода вставляется как левый ребёнок родителя
-	tree = New[int, string]()
-	root = &Node[int, string]{
-		key:   10,
-		data:  "data-10",
-		color: BLACK,
-	}
-	parent = &Node[int, string]{
-		key:   15,
-		data:  "data-15",
-		color: RED,
-	}
-	root.right = parent
-	parent.parent = root
-	tree.root = root
+func createRightRotateTree() (tree *RBTree[int, string], root, parent, node *Node[int, string]) {
+	tree = buildTestTree[int, string](func(tree *RBTree[int, string]) {
+		root = createNewTestNode(10, "data-10", BLACK, nil)
+		// Родитель здесь — правый ребёнок корня.
+		parent = createNewTestNode(15, "data-15", RED, root)
+		root.right = parent
+		parent.parent = root
+		tree.root = root
 
-	// newNode вставляется как левый ребёнок родителя.
-	newNode = &Node[int, string]{
-		key:    13,
-		data:   "data-13",
-		color:  RED,
-		parent: parent,
-	}
-	parent.left = newNode
+		// createNewTestNode вставляется как левый ребёнок родителя.
+		node = createNewTestNode(13, "data-13", RED, parent)
+		parent.left = node
+	})
 	return
 }
 
 func createLongTree() *RBTree[int, string] {
-	arr := []int{11, 1, 12, 2, 13, 3, 14, 4, 15, 5, 16, 6, 17, 7, 18, 8, 19, 9, 20}
 	tree := New[int, string]()
-	for i := 0; i < len(arr); i++ {
-		tree.InsertTree(arr[i], fmt.Sprintf("data-%d", i))
+	arr := []int{11, 1, 12, 2, 13, 3, 14, 4, 15, 5, 16, 6, 17, 7, 18, 8, 19, 9, 20}
+	for i, key := range arr {
+		tree.InsertTree(key, fmt.Sprintf("data-%d", i))
 	}
 	return tree
 }
@@ -185,4 +155,28 @@ func checkBlackHeight(node *Node[int, string], currentBlackCount int, reference 
 		return err
 	}
 	return nil
+}
+
+// cloneTree и cloneNode нужны для бенчмарков, чтобы убрать подсчет в бенчмаркох алокаций на создание дерева,
+// а считать только алокации при удалении
+func cloneTree[K cmp.Ordered, V any](tree *RBTree[K, V]) *RBTree[K, V] {
+	newTree := New[K, V]()
+	newTree.root = cloneNode(tree.root, nil)
+	return newTree
+}
+
+// cloneNode создает глубокую копию узла и всех его поддеревьев.
+// parent — родительский узел для вновь созданного клона.
+func cloneNode[K cmp.Ordered, V any](node *Node[K, V], parent *Node[K, V]) *Node[K, V] {
+	if node == nil {
+		return nil
+	}
+	newNode := &Node[K, V]{
+		key:    node.key,
+		color:  node.color,
+		parent: parent,
+	}
+	newNode.left = cloneNode(node.left, newNode)
+	newNode.right = cloneNode(node.right, newNode)
+	return newNode
 }

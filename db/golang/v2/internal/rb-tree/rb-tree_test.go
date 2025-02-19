@@ -291,3 +291,92 @@ func BenchmarkRBTree_InsertTree(b *testing.B) {
 		tree.InsertTree(i, fmt.Sprintf("data-%d", i))
 	}
 }
+
+func BenchmarkRBTree_Find(b *testing.B) {
+	tree := New[int, string]()
+	for i := 0; i < 10000; i++ {
+		tree.InsertTree(i, fmt.Sprintf("data %d", i))
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		// Проводим поиск случайного ключа
+		_ = tree.findNode(i % 10000)
+	}
+}
+
+// В тесте при измерениях аллоцируется на каждую итерацию новое дерево,
+// поэтому цифра 10001 allocs/op это нормально
+func BenchmarkRBTree_Delete_Only(b *testing.B) {
+	// Предварительно создаем дерево с 10000 узлов
+	tree := New[int, string]()
+	for j := 0; j < 10000; j++ {
+		tree.InsertTree(j, fmt.Sprintf("data %d", j))
+	}
+	keys := make([]int, 10000)
+	for i := 0; i < 10000; i++ {
+		keys[i] = i
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		localTree := cloneTree(tree)
+		for _, key := range keys {
+			localTree.Delete(key)
+		}
+	}
+}
+
+// Более чистый бенчмарк для удаления без аллокаций на каждой итерации
+func BenchmarkRBTree_Delete_Sequential(b *testing.B) {
+	numNodes := 10000
+	tree := New[int, string]()
+	for j := 0; j < numNodes; j++ {
+		tree.InsertTree(j, fmt.Sprintf("data %d", j))
+	}
+
+	keys := make([]int, numNodes-1)
+	for i := 0; i < numNodes-1; i++ {
+		keys[i] = i
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		if len(keys) == 0 {
+			break
+		}
+
+		key := keys[0]
+		keys = keys[1:]
+		tree.Delete(key)
+	}
+}
+
+// Более чистый бенчмарк для удаления, но в обратном порядке, без аллокаций на каждой итерации
+func BenchmarkRBTree_Delete_Reverse(b *testing.B) {
+	numNodes := 10000
+	tree := New[int, string]()
+	for j := 0; j < numNodes; j++ {
+		tree.InsertTree(j, fmt.Sprintf("data %d", j))
+	}
+
+	keys := make([]int, numNodes-1)
+	for i := 0; i < numNodes-1; i++ {
+		keys[i] = numNodes - 1 - i
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		if len(keys) == 0 {
+			break
+		}
+
+		key := keys[0]
+		keys = keys[1:] // Убираем ключ из списка
+		tree.Delete(key)
+	}
+}
