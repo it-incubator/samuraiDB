@@ -14,29 +14,43 @@ jobs:
     strategy:
       matrix:
         version: [v1, v2]
+      fail-fast: false
     container:
       image: golang:1.23
+    env:
+      GOFLAGS: "-buildvcs=false"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Важно для получения всей истории git
 
       - name: Build statictest binary
         run: |
-          cd db/golang/${{ matrix.version }}
-          go get github.com/jingyugao/rowserrcheck/passes/rowserr
-          go get github.com/timakin/bodyclose/passes/bodyclose
-          go get golang.org/x/tools/go/analysis
-          go get honnef.co/go/tools/simple
-          go get honnef.co/go/tools/staticcheck
-          go get honnef.co/go/tools/stylecheck
-          go mod download
-          go generate ./...
-          go build -o ./bin/statictest ./pkg/statictest/main.go
+          cd db/golang/tools/statictest
+          # Инициализируем модуль, если его еще нет
+          if [ ! -f go.mod ]; then
+            go mod init statictest
+          fi
+          # Добавляем зависимости
+          go get github.com/jingyugao/rowserrcheck/passes/rowserr@latest
+          go get github.com/timakin/bodyclose/passes/bodyclose@latest
+          go get golang.org/x/tools/go/analysis@latest
+          go get honnef.co/go/tools/simple@latest
+          go get honnef.co/go/tools/staticcheck@latest
+          go get honnef.co/go/tools/stylecheck@latest
+          
+          go mod tidy
+          go generate -buildvcs=false ./...
+          mkdir -p bin
+          go build -buildvcs=false -o bin/statictest main.go
+          chmod +x bin/statictest
 
       - name: Setup autotest binary
         run: |
-          chmod +x $GITHUB_WORKSPACE/db/golang/${{ matrix.version }}/bin/statictest
-          mv $GITHUB_WORKSPACE/db/golang/${{ matrix.version }}/bin/statictest /usr/local/bin/statictest
+          mkdir -p /usr/local/bin
+          mv $GITHUB_WORKSPACE/db/golang/tools/statictest/bin/statictest /usr/local/bin/statictest
+          chmod +x /usr/local/bin/statictest
 
       - name: Run statictest
         run: |
@@ -48,12 +62,16 @@ jobs:
     strategy:
       matrix:
         version: [v1, v2]
+      fail-fast: false
     container:
       image: golang:1.23
-
+    env:
+      GOFLAGS: "-buildvcs=false"
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
