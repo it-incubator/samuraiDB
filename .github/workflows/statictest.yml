@@ -33,13 +33,6 @@ jobs:
             go mod init statictest
           fi
           # Добавляем зависимости
-          go get github.com/jingyugao/rowserrcheck/passes/rowserr@latest
-          go get github.com/timakin/bodyclose/passes/bodyclose@latest
-          go get golang.org/x/tools/go/analysis@latest
-          go get honnef.co/go/tools/simple@latest
-          go get honnef.co/go/tools/staticcheck@latest
-          go get honnef.co/go/tools/stylecheck@latest
-          
           go mod tidy
           go generate -buildvcs=false ./...
           mkdir -p bin
