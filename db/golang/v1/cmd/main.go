@@ -4,15 +4,17 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"log"
 	"net"
 	"path/filepath"
+	"strings"
+
 	fa "samurai-db/internal/file_adapter"
 	im "samurai-db/internal/index_manager"
 	sdb "samurai-db/internal/samuraidb"
 	sm "samurai-db/internal/segment_manager"
-	"strings"
+
+	"github.com/google/uuid"
 )
 
 type RequestAction struct {

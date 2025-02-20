@@ -1,9 +1,11 @@
 package indexmanager
 
 import (
-	"github.com/stretchr/testify/assert"
-	"samurai-db/internal/file_adapter"
 	"testing"
+
+	"samurai-db/internal/file_adapter"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestIndexManager(t *testing.T) {
