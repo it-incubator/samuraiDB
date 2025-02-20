@@ -11,53 +11,49 @@ on:
 jobs:
   statictest:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version: [v1, v2]
     container:
       image: golang:1.23
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
       - name: Build statictest binary
         run: |
-          cd db/golang/v1
+          cd db/golang/${{ matrix.version }}
           go get github.com/jingyugao/rowserrcheck/passes/rowserr
           go get github.com/timakin/bodyclose/passes/bodyclose
           go get golang.org/x/tools/go/analysis
           go get honnef.co/go/tools/simple
           go get honnef.co/go/tools/staticcheck
           go get honnef.co/go/tools/stylecheck
+          go mod download
           go generate ./...
           go build -o ./bin/statictest ./pkg/statictest/main.go
 
       - name: Setup autotest binary
         run: |
-          chmod +x $GITHUB_WORKSPACE/db/golang/v1/bin/statictest
-          mv $GITHUB_WORKSPACE/db/golang/v1/bin/statictest /usr/local/bin/statictest
+          chmod +x $GITHUB_WORKSPACE/db/golang/${{ matrix.version }}/bin/statictest
+          mv $GITHUB_WORKSPACE/db/golang/${{ matrix.version }}/bin/statictest /usr/local/bin/statictest
 
-      - name: Run statictest for v1
+      - name: Run statictest
         run: |
-          cd db/golang/v1
+          cd db/golang/${{ matrix.version }}
           go vet -vettool=$(which statictest) ./...
 
   test:
     runs-on: ubuntu-latest
-    container:
-      image: golang:1.23
-
     strategy:
       matrix:
-        version: [ v1, v2 ]
-      fail-fast: false
-
-    name: Test ${{ matrix.version }}
+        version: [v1, v2]
+    container:
+      image: golang:1.23
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
 
       - name: Install dependencies
         run: |
@@ -66,5 +62,5 @@ jobs:
 
       - name: Run tests
         run: |
-            cd db/golang/${{ matrix.version }}
-            go test ./...
+          cd db/golang/${{ matrix.version }}
+          go test ./...
