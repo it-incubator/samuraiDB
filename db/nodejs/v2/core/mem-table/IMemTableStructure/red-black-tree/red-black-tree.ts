@@ -142,6 +142,8 @@ export class RedBlackTree<TKey, TValue> implements IMemTableStructure<TKey, TVal
         }
 
         this.fixInsertion(newNode);
+
+        this.print()
     }
 
     delete(key: TKey): void {
@@ -274,7 +276,38 @@ export class RedBlackTree<TKey, TValue> implements IMemTableStructure<TKey, TVal
         const node = this.findNode(key);
         return node ? node.value : null;
     }
+
+    print(): void {
+        if (!this.root) {
+            console.log("Empty tree");
+            return;
+        }
+
+        const printNode = (node: TreeNode<TKey, TValue>, prefix: string, isLeft: boolean): void => {
+            if (!node) return;
+
+            console.log(
+                prefix +
+                (isLeft ? "├── " : "└── ") +
+                `${node.key}(${node.color})`
+            );
+
+            // Рекурсивный вызов для левого и правого поддерева
+            if (node.left) {
+                printNode(node.left, prefix + (isLeft ? "│   " : "    "), true);
+            }
+            if (node.right) {
+                printNode(node.right, prefix + (isLeft ? "│   " : "    "), false);
+            }
+        };
+
+        // Начинаем с корня
+        console.log(`${this.root.key}(${this.root.color})`);
+        if (this.root.left) {
+            printNode(this.root.left, "", true);
+        }
+        if (this.root.right) {
+            printNode(this.root.right, "", false);
+        }
+    }
 }
-
-
-//   node: {key, value: T}
