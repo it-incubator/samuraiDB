@@ -2,6 +2,7 @@ package segmentmanager
 
 import (
 	"fmt"
+
 	fa "samurai-db/internal/file_adapter"
 )
 
