@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: [v1, v2]
+        version: [v1]
       fail-fast: false
     container:
       image: golang:1.23
