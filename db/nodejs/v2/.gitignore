@@ -1,2 +1,5 @@
 *.sst
 *.idx
+
+!**/test-data/samples/*.sst
+!**/test-data/samples/*.idx
