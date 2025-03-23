@@ -2,8 +2,9 @@ import {createServer} from 'net';
 import {join} from 'path';
 import {MemTable} from "../core/mem-table/mem-table";
 import {RedBlackTree} from "../core/mem-table/IMemTableStructure/red-black-tree/red-black-tree";
-import {IntegerIdStratagy, SamuraiDb, SSTablesManager} from "../core/samurai-db/samurai-db";
+import {IntegerIdStratagy, SamuraiDb} from "../core/samurai-db/samurai-db";
 import {FileManager} from "../core/samurai-db/file-manager/file-manager";
+import {SSTablesManager} from "../core/samurai-db/ss-tables-manager";
 
 const dir = join(__dirname, '..', '..', 'db');
 
@@ -33,9 +34,7 @@ const server = createServer(async (socket) => {
         const entity = await db.set(id ?? null, { ...requestAction.payload });
 
         let response = {
-          payload: {
-            entity
-          },
+          payload: entity,
           requestId: requestAction.requestId,
         };
         console.log(JSON.stringify(response));

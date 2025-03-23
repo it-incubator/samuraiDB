@@ -1,8 +1,7 @@
 import {ISamuraiDB} from "./i-samurai-db";
 import {IMemTable} from "../mem-table/i-mem-table";
-import {SSTable} from "../sstable/sstable";
-import * as fs from "fs";
 import {FileManager} from "./file-manager/file-manager";
+import {SSTablesManager} from "./ss-tables-manager";
 
 
 export interface IIdManager<TKey> {
@@ -26,48 +25,23 @@ export class IntegerIdStratagy implements IIdManager<number> {
 }
 
 
-export class SSTablesManager {
-    ssTables: SSTable[] = []
-
-    constructor(private fileManager: FileManager, private idManager: IIdManager<any>) {
-    }
-
-    async restore() {
-        const ssTablesNamesNumbers = this.fileManager.getSSTablesNumbers();
-
-        for (const ssTableName of ssTablesNamesNumbers) {
-            let ssTable = new SSTable(this.fileManager.getDataFolderPath(), ssTableName.toString());
-            await ssTable.init()
-            this.idManager.setMax(ssTable.metaData.maxId);
-            this.ssTables.push(ssTable)
-        }
-    }
-
-    public async flushMemtableToSSTable(memTable: IMemTable<any, any>) {
-        const nextSSTableNumber = this.fileManager.getNextSSTableNumber();
-        const newSSTable = new SSTable(this.fileManager.getDataFolderPath(), nextSSTableNumber.toString());
-        await memTable.flush(newSSTable);
-        this.fileManager.registerSSTable(nextSSTableNumber);
-        this.ssTables.push(newSSTable);
-    }
-}
-
 export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
     constructor(private memTable: IMemTable<TKey, TValue>, private fileManager: FileManager, private idManager: IIdManager<TKey>, private sSTablesManager: SSTablesManager) {
 
     }
 
     public async init() {
-        return this.sSTablesManager.restore();
+        return this.sSTablesManager.init();
     }
 
-    public async set(key: TKey | null, value: TValue): Promise<void> {
+    public async set(key: TKey | null, value: TValue): Promise<TValue> {
         const correctedKey = key === null ? this.idManager.getNext() : key;
-        this.memTable.set(correctedKey, {...value, correctedKey});
+        this.memTable.set(correctedKey, {...value, id: correctedKey});
         const needFlushToSSTable = this.memTable.isFull();
         if (needFlushToSSTable) {
             await this.sSTablesManager.flushMemtableToSSTable(this.memTable)
         }
+        return {...value, id: correctedKey};
     }
 
     public async get(key: TKey): Promise<TValue> | null {
