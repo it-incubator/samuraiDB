@@ -12,6 +12,7 @@ export class SSTable {
     private indexFilePath: string;
     public metaData: MetaDataType;
     private index: Map<string, number>;
+    private status: 'initialized' | 'not-initialized' = 'not-initialized'
 
     constructor(directory: string, fileName: string) {
         this.dataFilePath = path.join(directory, `${fileName}.sst`);
@@ -20,8 +21,13 @@ export class SSTable {
     }
 
     async init() {
-        await this.loadIndex();
-        await this.loadMetadata();
+        if (this.status === 'not-initialized') {
+            await this.loadIndex();
+            await this.loadMetadata();
+            this.status = 'initialized';
+        } else {
+            throw new Error('already initialized');
+        }
     }
 
     private loadIndex(): void {
