@@ -90,7 +90,6 @@ export class Compactor {
         const fileReaders: FileReader[] = [];
 
         for (let i = 0; i < sstables.length; i++) {
-            await sstables[i].init();
             const stream = fs.createReadStream(sstables[i]['dataFilePath']);
             const reader = readline.createInterface({ input: stream });
             const iterator = reader[Symbol.asyncIterator]();
