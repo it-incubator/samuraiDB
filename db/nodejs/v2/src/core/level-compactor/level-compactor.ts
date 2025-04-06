@@ -3,131 +3,179 @@ import * as readline from "readline";
 import * as path from "path";
 import {SSTable} from "../sstable/sstable";
 
-type LineEntry = { key: string; value: string; reader: readline.Interface; fileIndex: number; done: boolean };
+interface LineEntry {
+    key: string;
+    value: string;
+    fileIndex: number;
+}
+
+interface FileReader {
+    reader: readline.Interface;
+    iterator: AsyncIterator<string>;
+    currentLine: LineEntry | null;
+    done: boolean;
+}
 
 export class Compactor {
     constructor(private directory: string) {}
 
     async compactTables(sstables: SSTable[], levelFolder: string): Promise<SSTable[]> {
+        if (sstables.length === 0) return [];
+
         const outDir = path.join(this.directory, levelFolder);
-        if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
-
-        const readers: readline.Interface[] = [];
-        const currentLines: (LineEntry | null)[] = [];
-
-        const sstableSize = sstables.length > 0
-            ? fs.statSync(sstables[0]["dataFilePath"]).size
-            : 1024;
-        const maxChunkBytes = sstableSize * 2;
-
-        // --- Init readers and read first real line (skip metadata)
-        for (let i = 0; i < sstables.length; i++) {
-            await sstables[i].init();
-            const stream = fs.createReadStream(sstables[i]['dataFilePath'], { encoding: "utf-8" });
-            const reader = readline.createInterface({ input: stream });
-            readers[i] = reader;
-
-            const firstLine = await new Promise<string | null>(resolve => {
-                let skipped = false;
-                reader.on("line", (line) => {
-                    if (!skipped) {
-                        skipped = true;
-                        return;
-                    }
-                    reader.removeAllListeners("line");
-                    resolve(line);
-                });
-                reader.once("close", () => resolve(null));
-            });
-
-            if (firstLine) {
-                const [key, value] = firstLine.split(/:(.+)/);
-                currentLines[i] = { key, value, reader, fileIndex: i, done: false };
-            } else {
-                currentLines[i] = null;
-            }
+        if (!fs.existsSync(outDir)) {
+            fs.mkdirSync(outDir, { recursive: true });
         }
 
-        // --- Helpers
-        const advance = async (i: number): Promise<void> => {
-            const reader = readers[i];
-            const line = await new Promise<string | null>(resolve => {
-                reader.once("line", resolve);
-                reader.once("close", () => resolve(null));
-            });
+        // Инициализация читателей файлов
+        const fileReaders: FileReader[] = await this.initializeReaders(sstables);
 
-            if (line) {
-                const [key, value] = line.split(/:(.+)/);
-                currentLines[i] = { key, value, reader, fileIndex: i, done: false };
-            } else {
-                currentLines[i] = null;
-            }
-        };
-
-        const pickNext = (): { line: LineEntry; index: number } | null => {
-            const active = currentLines
-                .map((line, index) => ({ line, index }))
-                .filter(e => e.line !== null) as { line: LineEntry, index: number }[];
-
-            if (active.length === 0) return null;
-
-            active.sort((a, b) => {
-                const ak = Number(a.line.key);
-                const bk = Number(b.line.key);
-                return ak !== bk ? ak - bk : b.index - a.index; // newest wins
-            });
-
-            return active[0];
-        };
-
-        // --- Merge loop
+        // Подготовка к записи результата
         const writtenTables: SSTable[] = [];
-        const seen = new Set<string>();
-        let chunk: { key: string, value: string }[] = [];
-        let chunkBytes = 0;
-        let chunkIndex = 0;
+        let currentChunk: LineEntry[] = [];
+        let chunkSize = 0;
+        const maxChunkSize = 1024 * 1024; // 1MB или настраиваемый размер
+        let fileCounter = 0;
 
-        const writeChunk = async () => {
-            if (chunk.length === 0) return;
-            const keys = chunk.map(e => Number(e.key));
-            const meta = {
-                minId: String(Math.min(...keys)),
-                maxId: String(Math.max(...keys)),
-            };
-            const fileName = `compacted-${chunkIndex++}`;
-            const newTable = new SSTable(outDir, fileName);
-            await newTable.write(meta, chunk);
-            writtenTables.push(newTable);
-            chunk = [];
-            chunkBytes = 0;
-        };
+        try {
+            while (true) {
+                // Находим минимальный ключ среди текущих строк
+                const minKeyEntry = this.findMinKeyEntry(fileReaders);
+                if (!minKeyEntry) break; // Все файлы обработаны
 
-        while (true) {
-            const next = pickNext();
-            if (!next) break;
+                // Находим все записи с текущим ключом и выбираем новейшую
+                const currentKey = minKeyEntry.currentLine!.key;
+                const latestEntry = await this.findLatestEntryForKey(fileReaders, currentKey);
 
-            const { line, index } = next;
+                // Добавляем запись в текущий чанк
+                currentChunk.push(latestEntry);
+                chunkSize += Buffer.byteLength(JSON.stringify(latestEntry), 'utf8');
 
-            if (!seen.has(line.key)) {
-                const entry = { key: line.key, value: line.value };
-                const size = Buffer.byteLength(`${entry.key}:${entry.value}\n`, "utf-8");
-
-                if (chunkBytes + size > maxChunkBytes) {
-                    await writeChunk();
+                // Если чанк достиг максимального размера, записываем его
+                if (chunkSize >= maxChunkSize) {
+                    const newTable = await this.writeChunkToSSTable(
+                        currentChunk,
+                        outDir,
+                        `compacted-${fileCounter++}`
+                    );
+                    writtenTables.push(newTable);
+                    currentChunk = [];
+                    chunkSize = 0;
                 }
 
-                chunk.push(entry);
-                chunkBytes += size;
-                seen.add(line.key);
+                // Продвигаем вперед читатели, которые имели текущий ключ
+                await this.advanceReadersWithKey(fileReaders, currentKey);
             }
 
-            await advance(index);
+            // Записываем оставшиеся данные
+            if (currentChunk.length > 0) {
+                const newTable = await this.writeChunkToSSTable(
+                    currentChunk,
+                    outDir,
+                    `compacted-${fileCounter}`
+                );
+                writtenTables.push(newTable);
+            }
+
+            return writtenTables;
+        } finally {
+            // Закрываем все читатели
+            fileReaders.forEach(fr => fr.reader.close());
+            // Удаляем исходные файлы
+            sstables.forEach(t => t.delete());
+        }
+    }
+
+    private async initializeReaders(sstables: SSTable[]): Promise<FileReader[]> {
+        const fileReaders: FileReader[] = [];
+
+        for (let i = 0; i < sstables.length; i++) {
+            await sstables[i].init();
+            const stream = fs.createReadStream(sstables[i]['dataFilePath']);
+            const reader = readline.createInterface({ input: stream });
+            const iterator = reader[Symbol.asyncIterator]();
+
+            // Пропускаем метаданные (первую строку)
+            await iterator.next();
+
+            const fileReader: FileReader = {
+                reader,
+                iterator,
+                currentLine: null,
+                done: false
+            };
+
+            // Читаем первую реальную строку
+            await this.advanceReader(fileReader, i);
+            fileReaders.push(fileReader);
         }
 
-        await writeChunk();
-        readers.forEach(r => r.close());
-        sstables.forEach(t => t.delete());
+        return fileReaders;
+    }
 
-        return writtenTables;
+    private async advanceReader(fileReader: FileReader, fileIndex: number): Promise<void> {
+        const result = await fileReader.iterator.next();
+
+        if (result.done) {
+            fileReader.done = true;
+            fileReader.currentLine = null;
+            return;
+        }
+
+        const [key, value] = result.value.split(/:(.+)/);
+        fileReader.currentLine = { key, value, fileIndex };
+    }
+
+    private findMinKeyEntry(fileReaders: FileReader[]): FileReader | null {
+        return fileReaders
+            .filter(fr => !fr.done && fr.currentLine)
+            .reduce((min, current) => {
+                if (!min) return current;
+                return BigInt(current.currentLine!.key) < BigInt(min.currentLine!.key) ? current : min;
+            }, null as FileReader | null);
+    }
+
+    private async findLatestEntryForKey(fileReaders: FileReader[], key: string): Promise<LineEntry> {
+        let latestEntry: LineEntry | null = null;
+
+        for (const fr of fileReaders) {
+            if (fr.done || !fr.currentLine || fr.currentLine.key !== key) continue;
+
+            if (!latestEntry || fr.currentLine.fileIndex > latestEntry.fileIndex) {
+                latestEntry = fr.currentLine;
+            }
+        }
+
+        return latestEntry!;
+    }
+
+    private async advanceReadersWithKey(fileReaders: FileReader[], key: string): Promise<void> {
+        const promises = fileReaders.map(async (fr, index) => {
+            if (!fr.done && fr.currentLine && fr.currentLine.key === key) {
+                await this.advanceReader(fr, index);
+            }
+        });
+
+        await Promise.all(promises);
+    }
+
+    private async writeChunkToSSTable(
+        chunk: LineEntry[],
+        outDir: string,
+        fileName: string
+    ): Promise<SSTable> {
+        const meta = {
+            minId: chunk[0].key,
+            maxId: chunk[chunk.length - 1].key
+        };
+
+        const formatted = chunk.map(entry => ({
+            key: entry.key,
+            value: entry.value
+        }));
+
+        const newTable = new SSTable(outDir, fileName);
+        await newTable.write(meta, formatted);
+        return newTable;
     }
 }
