@@ -35,7 +35,7 @@ export class Compactor {
         let currentChunk: LineEntry[] = [];
         let chunkSize = 0;
         const maxChunkSize = 1024 * 1024; // 1MB или настраиваемый размер
-        let fileCounter = 0;
+        let fileCounter = 1;
 
         try {
             while (true) {
@@ -52,11 +52,11 @@ export class Compactor {
                 chunkSize += Buffer.byteLength(JSON.stringify(latestEntry), 'utf8');
 
                 // Если чанк достиг максимального размера, записываем его
-                if (chunkSize >= maxChunkSize) {
+                if (currentChunk.length >= sstables[0].metaData.count * 2) {
                     const newTable = await this.writeChunkToSSTable(
                         currentChunk,
                         outDir,
-                        `compacted-${fileCounter++}`
+                        `${fileCounter++}`
                     );
                     writtenTables.push(newTable);
                     currentChunk = [];
@@ -72,7 +72,7 @@ export class Compactor {
                 const newTable = await this.writeChunkToSSTable(
                     currentChunk,
                     outDir,
-                    `compacted-${fileCounter}`
+                    `${fileCounter}`
                 );
                 writtenTables.push(newTable);
             }
@@ -163,18 +163,13 @@ export class Compactor {
         outDir: string,
         fileName: string
     ): Promise<SSTable> {
-        const meta = {
-            minId: chunk[0].key,
-            maxId: chunk[chunk.length - 1].key
-        };
-
         const formatted = chunk.map(entry => ({
             key: entry.key,
             value: entry.value
         }));
 
         const newTable = new SSTable(outDir, fileName);
-        await newTable.write(meta, formatted);
+        await newTable.write(formatted);
         return newTable;
     }
 }

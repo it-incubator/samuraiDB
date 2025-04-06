@@ -33,14 +33,8 @@ export class MemTable<TKey, TValue> implements IMemTable<TKey, TValue> {
                 value: JSON.stringify(item.value)
             }));
 
-        const metadata: MetaDataType = {
-            minId: data[0].key.toString(),
-            maxId: data.at(-1).key.toString(),
-        }
 
-
-
-        await ssTable.write(metadata, data);
+        await ssTable.write(data);
 
         this.structure.clear();
     }

@@ -5,6 +5,7 @@ import * as readline from "readline";
 export type MetaDataType = {
     minId: string
     maxId: string
+    count: number
 }
 
 export class SSTable {
@@ -60,7 +61,13 @@ export class SSTable {
         this.metaData = await promise;
     }
 
-    write(metadata: any, data: { key: string; value: string }[]): Promise<void> {
+    write(data: { key: string; value: string }[]): Promise<void> {
+        const metadata: MetaDataType = {
+            minId: data[0].key.toString(),
+            maxId: data.at(-1).key.toString(),
+            count:  data.length
+        }
+
         return new Promise((resolve, reject) => {
             const dataStream = fs.createWriteStream(this.dataFilePath, { flags: "w" });
             const indexStream = fs.createWriteStream(this.indexFilePath, { flags: "w" });

@@ -12,8 +12,9 @@ https://chatgpt.com/c/679e5e7d-cb4c-8006-9eb7-50fb11db11ed
 ✅ e2e webclient tests
 
 🟩 compaction
-- 🟩
-- 🟩
+- ✅ done compaction first value for first level 
+- 🟩 do the same for level0 + level 1
+- 🟩 do new more simple alg for others levels 
 
 🟨 gitignore
 🟨 typescript
