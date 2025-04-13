@@ -2,9 +2,10 @@ import {createServer} from 'net';
 import {join} from 'path';
 import {MemTable} from "../core/mem-table/mem-table";
 import {RedBlackTree} from "../core/mem-table/IMemTableStructure/red-black-tree/red-black-tree";
-import {IntegerIdStratagy, SamuraiDb} from "../core/samurai-db/samurai-db";
+import {SamuraiDb} from "../core/samurai-db/samurai-db";
 import {FileManager} from "../core/samurai-db/file-manager/file-manager";
 import {SSTablesManager} from "../core/samurai-db/ss-tables-manager";
+import {IntegerIdStratagy} from "../core/samurai-db/integer-id-stratagy";
 
 const dir = join(__dirname, '..', '..', 'db');
 

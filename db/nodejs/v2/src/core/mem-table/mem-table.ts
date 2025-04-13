@@ -1,8 +1,7 @@
-import {IMemTable} from "./i-mem-table";
 import {IMemTableStructure} from "./IMemTableStructure/i-mem-table-structure";
-import {MetaDataType, SSTable} from "../sstable/sstable";
+import {SSTable} from "../sstable/sstable";
 
-export class MemTable<TKey, TValue> implements IMemTable<TKey, TValue> {
+export class MemTable<TKey, TValue>  { //implements IMemTable<TKey, TValue> {
     private structure: IMemTableStructure<TKey, TValue>;
 
     constructor(structure: IMemTableStructure<TKey, TValue>) {

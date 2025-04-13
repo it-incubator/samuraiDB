@@ -13,8 +13,12 @@ https://chatgpt.com/c/679e5e7d-cb4c-8006-9eb7-50fb11db11ed
 
 🟩 compaction
 - ✅ done compaction first value for first level 
-- 🟩 do the same for level0 + level 1
+- 🟩 run compaction by endpoint and add test to chec that after copmaction we can read data
+- 🟩 do the same for level0 + level 1 -> level1+level2 -> level2+level3
 - 🟩 do new more simple alg for others levels 
+
+
+🟨 index in memory should be by interval/range to minimize data in memeory
 
 🟨 gitignore
 🟨 typescript

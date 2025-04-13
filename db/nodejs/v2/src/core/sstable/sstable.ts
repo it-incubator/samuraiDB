@@ -14,11 +14,19 @@ export class SSTable {
     public metaData: MetaDataType;
     private index: Map<string, number>;
     private status: 'initialized' | 'not-initialized' = 'not-initialized'
+    public readonly layerNumber: number;
 
-    constructor(directory: string, fileName: string) {
-        this.dataFilePath = path.join(directory, `${fileName}.sst`);
-        this.indexFilePath = path.join(directory, `${fileName}.idx`);
+    constructor(directory: string, fileName: string, layerNumber: number) {
+        this.layerNumber = layerNumber;
+
+        const levelFolderPath = path.join(directory, `level${layerNumber}`);
+        fs.mkdirSync(levelFolderPath, { recursive: true });
+
+        this.dataFilePath = path.join(levelFolderPath, `${fileName}.sst`);
+        this.indexFilePath = path.join(levelFolderPath, `${fileName}.idx`);
+
         this.index = new Map();
+
     }
 
     async init() {

@@ -3,13 +3,18 @@ import * as path from "path";
 
 export class FileManager {
     private directory: string;
-    private sstablesFilesNumbers: Set<number>;
+    //private sstablesFilesNumbers: Set<number>;
+    private sstablesFilesNumbers: Map<number, Set<number>>;
 
     constructor(directory: string = "data") {
         this.directory = directory;
-        this.sstablesFilesNumbers = new Set();
-
+        this.sstablesFilesNumbers = new Map<number, Set<number>>()
+        this.sstablesFilesNumbers.set(0, new Set());
         this.ensureDirectoryExists();
+
+    }
+
+    init() {
         this.scanExistingSSTables();
     }
 
@@ -28,25 +33,39 @@ export class FileManager {
     }
 
     private scanExistingSSTables(): void {
-        const files = fs.readdirSync(this.directory);
+        const levels = fs.readdirSync(this.directory, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name);
 
-        files.forEach(file => {
-            const match = file.match(/^(\d+)\.sst$/);
-            if (match) {
-                this.sstablesFilesNumbers.add(parseInt(match[1], 10));
+        for (const levelName of levels) {
+            const levelMatch = levelName.match(/^level(\d+)$/);
+            if (!levelMatch) continue;
+
+            const levelNumber = parseInt(levelMatch[1], 10);
+            const levelPath = path.join(this.directory, levelName);
+            const files = fs.readdirSync(levelPath);
+
+            for (const file of files) {
+                const match = file.match(/^(\d+)\.sst$/);
+                if (!match) continue;
+
+                const fileNumber = parseInt(match[1], 10);
+
+                if (!this.sstablesFilesNumbers.has(levelNumber)) {
+                    this.sstablesFilesNumbers.set(levelNumber, new Set());
+                }
+
+                this.sstablesFilesNumbers.get(levelNumber)!.add(fileNumber);
             }
-        });
+        }
     }
 
-    public getNextSSTableNumber(): number {
-        if (this.sstablesFilesNumbers.size === 0) return 1;
 
-        // Convert Set to array manually to avoid TS2802
-        const tableNumbers = Array.from(this.sstablesFilesNumbers);
-        return Math.max.apply(null, tableNumbers) + 1;
+    public getNextSSTableNumberForZeroLevel(): number {
+        return this.sstablesFilesNumbers.get(0).size + 1;
     }
 
-    public registerSSTable(number: number): void {
-        this.sstablesFilesNumbers.add(number);
+    public registerSSTableToZeroLevel(number: number): void {
+        this.sstablesFilesNumbers.get(0).add(number);
     }
 }

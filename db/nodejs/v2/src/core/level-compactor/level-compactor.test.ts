@@ -2,8 +2,8 @@ import {Compactor} from "./level-compactor";
 import * as path from 'path';
 import {FileManager} from "../samurai-db/file-manager/file-manager";
 import {SSTablesManager} from "../samurai-db/ss-tables-manager";
-import {IntegerIdStratagy} from "../samurai-db/samurai-db";
 import * as fs from "node:fs";
+import {IntegerIdStratagy} from "../samurai-db/integer-id-stratagy";
 
 
 
@@ -35,12 +35,13 @@ describe('SSTableFile.ts', () => {
         const compactor = new Compactor(path.join(__dirname, 'test-data', 'data'));
 
         const fileManager = new FileManager(path.join(__dirname, 'test-data', 'data'));
+        fileManager.init();
         const idStrategy = new IntegerIdStratagy();
         const ssmanager = new SSTablesManager(fileManager, idStrategy);
         await ssmanager.init()
 
 
-        const resultTables = await compactor.compactTables(ssmanager.ssTables, 'level1');
+        const resultTables = await compactor.compactTables(ssmanager.ssTablesLevels, 'level1');
 
     })
 
@@ -49,6 +50,7 @@ describe('SSTableFile.ts', () => {
         const compactor = new Compactor(path.join(__dirname, 'test-data', 'data'));
 
         const fileManager = new FileManager(path.join(__dirname, 'test-data', 'data'));
+        fileManager.init();
         const idStrategy = new IntegerIdStratagy();
         const ssmanager = new SSTablesManager(fileManager, idStrategy);
         await ssmanager.init()
