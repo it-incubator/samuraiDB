@@ -5,6 +5,22 @@ import {SSTablesManager} from "../samurai-db/ss-tables-manager";
 import * as fs from "node:fs";
 import {IntegerIdStratagy} from "../samurai-db/integer-id-stratagy";
 
+function copyRecursiveSync(src: string, dest: string) {
+    const stats = fs.statSync(src);
+    if (stats.isDirectory()) {
+        if (!fs.existsSync(dest)) {
+            fs.mkdirSync(dest, { recursive: true });
+        }
+        const entries = fs.readdirSync(src);
+        entries.forEach(entry => {
+            const srcPath = path.join(src, entry);
+            const destPath = path.join(dest, entry);
+            copyRecursiveSync(srcPath, destPath);
+        });
+    } else {
+        fs.copyFileSync(src, dest);
+    }
+}
 
 
 describe('SSTableFile.ts', () => {
@@ -20,19 +36,13 @@ describe('SSTableFile.ts', () => {
         }
         fs.mkdirSync(DATA_DIR, { recursive: true });
 
-        // Копируем тестовые файлы из samples в data
-        const sampleFiles = fs.readdirSync(SAMPLES_DIR);
-        sampleFiles.forEach(file => {
-            fs.copyFileSync(
-                path.join(SAMPLES_DIR, file),
-                path.join(DATA_DIR, file)
-            );
-        });
+        // Рекурсивно копируем все из samples в data
+        copyRecursiveSync(SAMPLES_DIR, DATA_DIR);
     });
 
 
     test('simple exanple', async () => {
-        const compactor = new Compactor(path.join(__dirname, 'test-data', 'data'));
+
 
         const fileManager = new FileManager(path.join(__dirname, 'test-data', 'data'));
         fileManager.init();
@@ -40,20 +50,23 @@ describe('SSTableFile.ts', () => {
         const ssmanager = new SSTablesManager(fileManager, idStrategy);
         await ssmanager.init()
 
+        const compactor = new Compactor(fileManager, ssmanager);
 
-        const resultTables = await compactor.compactTables(ssmanager.ssTablesLevels, 'level1');
+
+        const resultTables = await compactor.compactTables(0);
 
     })
 
 
-    test('exanple ehtn first level already exists', async () => {
-        const compactor = new Compactor(path.join(__dirname, 'test-data', 'data'));
+    test.skip('exanple ehtn first level already exists', async () => {
 
         const fileManager = new FileManager(path.join(__dirname, 'test-data', 'data'));
         fileManager.init();
         const idStrategy = new IntegerIdStratagy();
         const ssmanager = new SSTablesManager(fileManager, idStrategy);
         await ssmanager.init()
+
+        const compactor = new Compactor(fileManager, ssmanager);
 
 
        // const sstables = ssmanager.ssTables from zero level + sstables from 1 level

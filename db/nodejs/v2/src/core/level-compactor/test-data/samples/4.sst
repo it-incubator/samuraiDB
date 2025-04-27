@@ -1,8 +1,0 @@
-meta:{"minId":"14","maxId":"24","count":7}
-14:{"id":"14","name":"Updated Samurai 14","attackPower":-14,"defensePower":221,"health":40,"weapon":"swore"}
-19:{"id":"19","name":"Updated Samurai 19","attackPower":-19,"defensePower":224,"health":74,"weapon":"swore"}
-20:{"name":"Samurai 20","attackPower":20,"defensePower":120,"health":68,"weapon":"katana","id":20}
-21:{"name":"Samurai 21","attackPower":21,"defensePower":121,"health":57,"weapon":"katana","id":21}
-22:{"name":"Samurai 22","attackPower":22,"defensePower":122,"health":46,"weapon":"katana","id":22}
-23:{"name":"Samurai 23","attackPower":23,"defensePower":123,"health":43,"weapon":"katana","id":23}
-24:{"name":"Samurai 24","attackPower":24,"defensePower":124,"health":27,"weapon":"katana","id":24}

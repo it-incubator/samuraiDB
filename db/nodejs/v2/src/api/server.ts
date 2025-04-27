@@ -6,6 +6,8 @@ import {SamuraiDb} from "../core/samurai-db/samurai-db";
 import {FileManager} from "../core/samurai-db/file-manager/file-manager";
 import {SSTablesManager} from "../core/samurai-db/ss-tables-manager";
 import {IntegerIdStratagy} from "../core/samurai-db/integer-id-stratagy";
+import {Compactor} from "../core/level-compactor/level-compactor";
+import path from "path";
 
 const dir = join(__dirname, '..', '..', 'db');
 
@@ -15,6 +17,8 @@ const fileManager = new FileManager('data');
 const idStrategy = new IntegerIdStratagy();
 const ssTablesManager = new SSTablesManager(fileManager, idStrategy);
 const db = new SamuraiDb<number, any>(memTable, fileManager, idStrategy, ssTablesManager);
+
+const compactor = new Compactor(fileManager, ssTablesManager);
 
 (async () => {
   await db.init();
@@ -54,6 +58,17 @@ const server = createServer(async (socket) => {
       }
       case 'DELETE': {
         const data = await db.delete(requestAction.payload.id);
+        let response = {
+          requestId: requestAction.requestId,
+        };
+        console.log('response: ', JSON.stringify(response));
+        socket.write(JSON.stringify(response));
+        break;
+      }
+
+      case 'RUN-COMPACTION': {
+        const result = await compactor.compactTables(0);
+
         let response = {
           requestId: requestAction.requestId,
         };

@@ -28,7 +28,7 @@ export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
     public async get(key: TKey): Promise<TValue> | null {
         let foundItem = this.memTable.get(key);
         if (foundItem) {
-            console.log("foundItem: ", foundItem)
+            console.log("foundItem inside memtable: ", foundItem)
             return foundItem;
         }
 

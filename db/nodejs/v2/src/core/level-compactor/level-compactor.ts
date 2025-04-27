@@ -2,6 +2,8 @@ import * as fs from "fs";
 import * as readline from "readline";
 import * as path from "path";
 import {SSTable} from "../sstable/sstable";
+import {SSTablesManager} from "../samurai-db/ss-tables-manager";
+import {FileManager} from "../samurai-db/file-manager/file-manager";
 
 interface LineEntry {
     key: string;
@@ -17,15 +19,22 @@ interface FileReader {
 }
 
 export class Compactor {
-    constructor(private directory: string) {}
+    constructor(
+        private fileManager: FileManager,
+        //private directory: string,
+        private ssTablesManager: SSTablesManager) {
+    }
 
-    async compactTables(sstables: SSTable[], levelFolder: string): Promise<SSTable[]> {
+
+    async compactTables(levelForProcessing: number): Promise<SSTable[]> {
+        const resultLevel = levelForProcessing + 1;
+        const sstables: SSTable[] = this.ssTablesManager.ssTablesLevels.get(levelForProcessing);
         if (sstables.length === 0) return [];
 
-        const outDir = path.join(this.directory, levelFolder);
-        if (!fs.existsSync(outDir)) {
-            fs.mkdirSync(outDir, { recursive: true });
-        }
+        // const outDir = path.join(this.directory, `level${resultLevel}`);
+        // if (!fs.existsSync(outDir)) {
+        //     fs.mkdirSync(outDir, { recursive: true });
+        // }
 
         // Инициализация читателей файлов
         const fileReaders: FileReader[] = await this.initializeReaders(sstables);
@@ -55,8 +64,8 @@ export class Compactor {
                 if (currentChunk.length >= sstables[0].metaData.count * 2) {
                     const newTable = await this.writeChunkToSSTable(
                         currentChunk,
-                        outDir,
-                        `${fileCounter++}`
+                        `${fileCounter++}`,
+                        resultLevel
                     );
                     writtenTables.push(newTable);
                     currentChunk = [];
@@ -71,8 +80,8 @@ export class Compactor {
             if (currentChunk.length > 0) {
                 const newTable = await this.writeChunkToSSTable(
                     currentChunk,
-                    outDir,
-                    `${fileCounter}`
+                    `${fileCounter}`,
+                    resultLevel
                 );
                 writtenTables.push(newTable);
             }
@@ -81,8 +90,9 @@ export class Compactor {
         } finally {
             // Закрываем все читатели
             fileReaders.forEach(fr => fr.reader.close());
+            await Promise.all([...sstables].map(t => this.ssTablesManager.deleteTable(t)));
             // Удаляем исходные файлы
-            sstables.forEach(t => t.delete());
+
         }
     }
 
@@ -91,7 +101,7 @@ export class Compactor {
 
         for (let i = 0; i < sstables.length; i++) {
             const stream = fs.createReadStream(sstables[i]['dataFilePath']);
-            const reader = readline.createInterface({ input: stream });
+            const reader = readline.createInterface({input: stream});
             const iterator = reader[Symbol.asyncIterator]();
 
             // Пропускаем метаданные (первую строку)
@@ -122,7 +132,7 @@ export class Compactor {
         }
 
         const [key, value] = result.value.split(/:(.+)/);
-        fileReader.currentLine = { key, value, fileIndex };
+        fileReader.currentLine = {key, value, fileIndex};
     }
 
     private findMinKeyEntry(fileReaders: FileReader[]): FileReader | null {
@@ -160,16 +170,19 @@ export class Compactor {
 
     private async writeChunkToSSTable(
         chunk: LineEntry[],
-        outDir: string,
-        fileName: string
+        fileName: string,
+        level
     ): Promise<SSTable> {
         const formatted = chunk.map(entry => ({
             key: entry.key,
             value: entry.value
         }));
 
-        const newTable = new SSTable(outDir, fileName);
+        const newTable = new SSTable(this.fileManager.getDataFolderPath(), fileName, level);
         await newTable.write(formatted);
+
+        this.ssTablesManager.registerSsTable(newTable)
+
         return newTable;
     }
 }

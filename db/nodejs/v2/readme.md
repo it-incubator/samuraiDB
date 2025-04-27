@@ -1,5 +1,18 @@
 https://chatgpt.com/c/679e5e7d-cb4c-8006-9eb7-50fb11db11ed
 
+For run DB Server:
+```bash
+pnpm start:dev
+```
+
+For run DB Server:
+```bash
+pnpm start:debug
+```
+
+
+
+
 ✅ red black tree
 ✅ memtable base
 ✅ samuraiDB base
@@ -13,7 +26,8 @@ https://chatgpt.com/c/679e5e7d-cb4c-8006-9eb7-50fb11db11ed
 
 🟩 compaction
 - ✅ done compaction first value for first level 
-- 🟩 run compaction by endpoint and add test to chec that after copmaction we can read data
+- ✅ run compaction by endpoint and add test to chec that after copmaction we can read data
+- 🟩 to e2e tests after compaction add new data and check that it's OK 
 - 🟩 do the same for level0 + level 1 -> level1+level2 -> level2+level3
 - 🟩 do new more simple alg for others levels 
 

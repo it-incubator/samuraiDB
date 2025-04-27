@@ -46,6 +46,13 @@ export class AppController {
     private readonly samuraiDBDriver: SamuraiDBDriver<SamuraiEntity>,
   ) {}
 
+  @ApiOperation({ summary: 'Run Compaction' })
+  @ApiParam({ name: 'id', required: true, description: 'Samurai ID' })
+  @Post('compaction')
+  async runCompaction(): Promise<void> {
+    return this.samuraiDBDriver.runCompaction();
+  }
+
   @ApiOperation({ summary: 'Get Samurai by ID' })
   @ApiParam({ name: 'id', required: true, description: 'Samurai ID' })
   @Get(':id')
@@ -81,4 +88,6 @@ export class AppController {
   async delete(@Param('id') id: string): Promise<void> {
     return this.samuraiDBDriver.deleteById(id);
   }
+
+
 }

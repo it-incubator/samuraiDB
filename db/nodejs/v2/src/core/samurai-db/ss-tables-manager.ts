@@ -7,7 +7,7 @@ export class SSTablesManager {
     ssTablesLevels: Map<number, SSTable[]>;
 
     get sortedSSTablesLevels() {
-        const sortedEntries = [...this.ssTablesLevels.entries()].sort((a, b) => a[0] - b[0]);
+        const sortedEntries = [...this.ssTablesLevels.entries()].sort((a, b) => a[0] - b[0]); // asc
 
 
         return sortedEntries;
@@ -18,6 +18,18 @@ export class SSTablesManager {
         this.ssTablesLevels.set(0, [])
     }
 
+    async deleteTable(ssTable: SSTable) {
+        ssTable.delete();
+
+        const ssTables = this.ssTablesLevels.get(ssTable.layerNumber);
+
+        const index = ssTables.findIndex(t => t === ssTable);
+
+        if (index !== -1) {
+            ssTables.splice(index, 1); // mutate original array
+        }
+    }
+
     async init() {
         const ssTablesNamesNumbersInLayers = this.fileManager.getSSTablesNumbers();
 
@@ -26,13 +38,16 @@ export class SSTablesManager {
                 let ssTable = new SSTable(this.fileManager.getDataFolderPath(), ssTableName.toString(), levelNumber);
                 await ssTable.init()
                 this.idManager.setMax(ssTable.metaData.maxId);
-                if (!this.ssTablesLevels.has(levelNumber)) {
-                    this.ssTablesLevels.set(levelNumber, [])
-                }
-
-                this.ssTablesLevels.get(levelNumber).push(ssTable);
+                this.registerSsTable(ssTable)
             }
         }
+    }
+
+    public  registerSsTable(ssTable: SSTable) {
+        if (!this.ssTablesLevels.has(ssTable.layerNumber)) {
+            this.ssTablesLevels.set(ssTable.layerNumber, [])
+        }
+        this.ssTablesLevels.get(ssTable.layerNumber).push(ssTable);
     }
 
     public async flushMemtableToSSTableInZeroLevel(memTable: MemTable<any, any>) {
@@ -41,5 +56,6 @@ export class SSTablesManager {
         await memTable.flush(newSSTable);
         this.fileManager.registerSSTableToZeroLevel(nextSSTableNumber);
         this.ssTablesLevels.get(0).push(newSSTable);
+      //  await newSSTable.init();
     }
 }

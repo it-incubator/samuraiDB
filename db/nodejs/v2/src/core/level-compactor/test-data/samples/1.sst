@@ -1,8 +1,0 @@
-meta:{"minId":"1","maxId":"7","count":7}
-1:{"id":"1","name":"Updated Samurai 1","attackPower":-1,"defensePower":206,"health":41,"weapon":"swore"}
-2:{"id":"2","name":"Updated Samurai 2","attackPower":-2,"defensePower":203,"health":29,"weapon":"swore"}
-3:{"name":"Samurai 3","attackPower":3,"defensePower":103,"health":10,"weapon":"katana","id":3}
-4:{"name":"Samurai 4","attackPower":4,"defensePower":104,"health":69,"weapon":"katana","id":4}
-5:{"name":"Samurai 5","attackPower":5,"defensePower":105,"health":79,"weapon":"katana","id":5}
-6:{"name":"Samurai 6","attackPower":6,"defensePower":106,"health":23,"weapon":"katana","id":6}
-7:{"name":"Samurai 7","attackPower":7,"defensePower":107,"health":71,"weapon":"katana","id":7}

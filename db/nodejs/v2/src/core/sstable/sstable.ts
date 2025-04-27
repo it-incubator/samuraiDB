@@ -16,10 +16,10 @@ export class SSTable {
     private status: 'initialized' | 'not-initialized' = 'not-initialized'
     public readonly layerNumber: number;
 
-    constructor(directory: string, fileName: string, layerNumber: number) {
+    constructor(rootDirectory: string, fileName: string, layerNumber: number) {
         this.layerNumber = layerNumber;
 
-        const levelFolderPath = path.join(directory, `level${layerNumber}`);
+        const levelFolderPath = path.join(rootDirectory, `level${layerNumber}`);
         fs.mkdirSync(levelFolderPath, { recursive: true });
 
         this.dataFilePath = path.join(levelFolderPath, `${fileName}.sst`);
@@ -75,6 +75,8 @@ export class SSTable {
             maxId: data.at(-1).key.toString(),
             count:  data.length
         }
+
+        this.metaData = metadata;
 
         return new Promise((resolve, reject) => {
             const dataStream = fs.createWriteStream(this.dataFilePath, { flags: "w" });

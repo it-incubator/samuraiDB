@@ -48,6 +48,13 @@ export class SamuraiDBDriver<T> {
     return promise;
   }
 
+  async runCompaction(): Promise<void> {
+    const { promise, uuid } = this.registerRequest<void>();
+    const action = { type: 'RUN-COMPACTION', payload: { }, requestId: uuid };
+    this.connection.client.write(JSON.stringify(action) + '\n');
+    return promise;
+  }
+
   async set<T>(dto: Omit<T, 'id'>): Promise<T> {
     const { promise, uuid } = this.registerRequest<T>();
     const action = { type: 'SET', payload: { ...dto }, requestId: uuid };
