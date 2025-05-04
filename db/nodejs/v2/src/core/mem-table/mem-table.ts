@@ -21,6 +21,7 @@ export class MemTable<TKey, TValue>  { //implements IMemTable<TKey, TValue> {
         return found || undefined;
     }
 
+
     public isFull(): boolean {
          return this.structure.getCount() > 5;
     }
@@ -35,6 +36,10 @@ export class MemTable<TKey, TValue>  { //implements IMemTable<TKey, TValue> {
 
         await ssTable.write(data);
 
+        this.structure.clear();
+    }
+
+    public async drop() {
         this.structure.clear();
     }
 }

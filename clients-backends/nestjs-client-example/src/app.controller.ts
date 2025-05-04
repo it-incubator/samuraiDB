@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   NotFoundException,
   Param,
   Post,
@@ -46,6 +48,12 @@ export class AppController {
     private readonly samuraiDBDriver: SamuraiDBDriver<SamuraiEntity>,
   ) {}
 
+  @Delete('db')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async drop(): Promise<void> {
+    return this.samuraiDBDriver.drop();
+  }
+
   @ApiOperation({ summary: 'Run Compaction' })
   @ApiParam({ name: 'id', required: true, description: 'Samurai ID' })
   @Post('compaction')
@@ -88,6 +96,4 @@ export class AppController {
   async delete(@Param('id') id: string): Promise<void> {
     return this.samuraiDBDriver.deleteById(id);
   }
-
-
 }

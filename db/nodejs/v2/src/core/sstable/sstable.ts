@@ -136,6 +136,7 @@ export class SSTable {
     }
 
     delete(): void {
+        // todo: move to filemanager
         if (fs.existsSync(this.dataFilePath)) fs.unlinkSync(this.dataFilePath);
         if (fs.existsSync(this.indexFilePath)) fs.unlinkSync(this.indexFilePath);
     }

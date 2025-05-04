@@ -4,6 +4,7 @@ import {SSTablesManager} from "./ss-tables-manager";
 import {MemTable} from "../mem-table/mem-table";
 import {IIdManager} from "./i-id-manager";
 
+const IS_DELETED_PROP_NAME = '__IS_DELETED__';
 
 export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
     constructor(private memTable: MemTable<TKey, TValue>, private fileManager: FileManager, private idManager: IIdManager<TKey>, private sSTablesManager: SSTablesManager) {
@@ -29,6 +30,9 @@ export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
         let foundItem = this.memTable.get(key);
         if (foundItem) {
             console.log("foundItem inside memtable: ", foundItem)
+            if (foundItem[IS_DELETED_PROP_NAME]){
+                return null;
+            }
             return foundItem;
         }
 
@@ -38,6 +42,9 @@ export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
                 for (const ssTable of [...ssTables].reverse()) {
                     foundItem = await ssTable.read(key.toString()) as TValue;
                     if (foundItem) {
+                        if (foundItem[IS_DELETED_PROP_NAME]){
+                            return null;
+                        }
                         return foundItem;
                     }
                 }
@@ -46,9 +53,12 @@ export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
         return null;
     }
 
-    public delete(key: TKey): void {
-        this.memTable.delete(key);
+    public async delete(key: TKey): Promise<void> {
+        await this.set(key, { [IS_DELETED_PROP_NAME]: true} as any)
     }
 
-
+    public drop() {
+        this.memTable.drop();
+        this.sSTablesManager.drop();
+    }
 }

@@ -65,6 +65,15 @@ const server = createServer(async (socket) => {
         socket.write(JSON.stringify(response));
         break;
       }
+        case 'DROP-DB': {
+          const data = db.drop();
+          let response = {
+            requestId: requestAction.requestId,
+          };
+          console.log('response: ', JSON.stringify(response));
+          socket.write(JSON.stringify(response));
+          break;
+        }
 
       case 'RUN-COMPACTION': {
         const result = await compactor.compactTables(0);
@@ -76,6 +85,7 @@ const server = createServer(async (socket) => {
         socket.write(JSON.stringify(response));
         break;
       }
+
       default: {
         console.error(`Unknown request type: ${requestAction.type}`);
         socket.write('Unknown request type');

@@ -9,21 +9,25 @@ jest.setTimeout(30000);
 describe('AppController (e2e)', () => {
   let app: INestApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
+
+    await request(app.getHttpServer()).delete(`/samurais/db`).expect(204);
   });
 
   const createdSamurais: { id: string; samurai: SamuraiUpdateCreateDTO }[] = [];
 
-  it('/samurais (POST & PUT + GET verification)', async () => {
+  const deletedIds = [];
+
+  it('/samurais (POST & PUT + DELETE + GET verification)', async () => {
     for (let i = 1; i <= 40; i++) {
+      // Каждые 3 шага — обновление рандомного самурая
       if (i % 3 === 0 && createdSamurais.length > 0) {
-        // Выбираем случайный ранее созданный объект чтобы обновить
         const randomEntry =
           createdSamurais[Math.floor(Math.random() * createdSamurais.length)];
 
@@ -35,16 +39,13 @@ describe('AppController (e2e)', () => {
           weapon: 'swore',
         };
 
-        // Обновляем
         await request(app.getHttpServer())
           .put(`/samurais/${randomEntry.id}`)
           .send(updatedSamurai)
           .expect(200);
 
-        // Обновляем локально в памяти
         randomEntry.samurai = updatedSamurai;
 
-        // Проверяем, что обновление применилось
         const getResponse = await request(app.getHttpServer())
           .get(`/samurais/${randomEntry.id}`)
           .expect(200);
@@ -52,6 +53,7 @@ describe('AppController (e2e)', () => {
         expect(getResponse.body).toMatchObject(updatedSamurai);
       }
 
+      // создаём нового самурая
       const newSamurai: SamuraiUpdateCreateDTO = {
         name: 'Samurai ' + i,
         attackPower: i,
@@ -67,18 +69,35 @@ describe('AppController (e2e)', () => {
 
       const id = postResponse.body.id;
       expect(id).toBeDefined();
+
       createdSamurais.push({ id, samurai: newSamurai });
 
-      // Проверяем, что POST-самурай был сохранён
-      const getResponse = await request(app.getHttpServer())
-        .get(`/samurais/${id}`)
-        .expect(200);
+      // Каждые 6 шагов — удаление рандомного самурая
+      if (i % 6 === 0 && createdSamurais.length > 0) {
+        const index = Math.floor(Math.random() * createdSamurais.length);
+        const toDelete = createdSamurais[index];
 
-      expect(getResponse.body).toMatchObject(newSamurai);
+        await request(app.getHttpServer())
+          .delete(`/samurais/${toDelete.id}`)
+          .expect(200);
+
+        await request(app.getHttpServer())
+          .get(`/samurais/${toDelete.id}`)
+          .expect(404);
+
+        deletedIds.push(toDelete.id);
+        createdSamurais.splice(index, 1); // удалить из списка, чтобы не использовать дальше
+      } else {
+        const getResponse = await request(app.getHttpServer())
+          .get(`/samurais/${id}`)
+          .expect(200);
+
+        expect(getResponse.body).toMatchObject(newSamurai);
+      }
     }
   });
 
-  it('/samurais (GET all and verify) after compaction', async () => {
+  it('/samurais (GET after compaction: deleted still 404, others ok)', async () => {
     await request(app.getHttpServer()).post(`/samurais/compaction`).expect(201);
 
     for (const entry of createdSamurais) {
@@ -87,6 +106,10 @@ describe('AppController (e2e)', () => {
         .expect(200);
 
       expect(getResponse.body).toMatchObject(entry.samurai);
+    }
+
+    for (const id of deletedIds) {
+      await request(app.getHttpServer()).get(`/samurais/${id}`).expect(404);
     }
   });
 });

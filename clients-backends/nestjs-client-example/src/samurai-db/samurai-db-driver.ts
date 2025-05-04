@@ -50,7 +50,14 @@ export class SamuraiDBDriver<T> {
 
   async runCompaction(): Promise<void> {
     const { promise, uuid } = this.registerRequest<void>();
-    const action = { type: 'RUN-COMPACTION', payload: { }, requestId: uuid };
+    const action = { type: 'RUN-COMPACTION', payload: {}, requestId: uuid };
+    this.connection.client.write(JSON.stringify(action) + '\n');
+    return promise;
+  }
+
+  async drop(): Promise<void> {
+    const { promise, uuid } = this.registerRequest<void>();
+    const action = { type: 'DROP-DB', payload: {}, requestId: uuid };
     this.connection.client.write(JSON.stringify(action) + '\n');
     return promise;
   }

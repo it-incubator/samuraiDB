@@ -8,10 +8,15 @@ export class FileManager {
 
     constructor(directory: string = "data") {
         this.directory = directory;
-        this.sstablesFilesNumbers = new Map<number, Set<number>>()
-        this.sstablesFilesNumbers.set(0, new Set());
+      this.createDictionary();
         this.ensureDirectoryExists();
 
+    }
+
+    //todo: rename
+    createDictionary() {
+        this.sstablesFilesNumbers = new Map<number /*levelnumber*/, Set<number /*ss_tablefile_number*/>>() //
+        this.sstablesFilesNumbers.set(0, new Set());
     }
 
     init() {
@@ -62,10 +67,19 @@ export class FileManager {
 
 
     public getNextSSTableNumberForZeroLevel(): number {
-        return this.sstablesFilesNumbers.get(0).size + 1;
+        //return this.sstablesFilesNumbers.get(0). size + 1;
+        const set = this.sstablesFilesNumbers.get(0);
+
+        const maxValue = set && set.size > 0 ? Math.max(...set) : 0;
+
+        return maxValue + 1;
     }
 
     public registerSSTableToZeroLevel(number: number): void {
         this.sstablesFilesNumbers.get(0).add(number);
+    }
+
+    drop() {
+        this.createDictionary();
     }
 }

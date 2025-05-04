@@ -58,4 +58,13 @@ export class SSTablesManager {
         this.ssTablesLevels.get(0).push(newSSTable);
       //  await newSSTable.init();
     }
+
+    drop() {
+        for (const ssTablesLevel of this.ssTablesLevels) {
+            ssTablesLevel[1].map(ssT => {
+                ssT.delete();
+                this.fileManager.drop();
+            })
+        }
+    }
 }
