@@ -66,7 +66,10 @@ export class AppController {
   @Get(':id')
   async getById(@Param('id') id: string): Promise<SamuraiEntity> {
     const item = await this.samuraiDBDriver.getById(id);
-    if (!item) throw new NotFoundException();
+    if (!item) {
+      console.log('❤️ not found ' + id);
+      throw new NotFoundException();
+    }
 
     return item;
   }

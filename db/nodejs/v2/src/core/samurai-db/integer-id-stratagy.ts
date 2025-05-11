@@ -14,4 +14,21 @@ export class IntegerIdStratagy implements IIdManager<number> {
         }
     }
 
+    reset() {
+        this.maxId = 0;
+    }
+
+    convertToIdFormat(key: any): number {
+        if (typeof key === 'number' && Number.isInteger(key)) {
+            return key;
+        }
+
+        const parsed = Number(key);
+        if (Number.isInteger(parsed)) {
+            return parsed;
+        }
+
+        throw new Error(`Invalid key format: ${key}`);
+    }
+
 }

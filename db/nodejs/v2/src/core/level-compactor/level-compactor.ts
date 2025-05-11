@@ -4,6 +4,7 @@ import * as path from "path";
 import {SSTable} from "../sstable/sstable";
 import {SSTablesManager} from "../samurai-db/ss-tables-manager";
 import {FileManager} from "../samurai-db/file-manager/file-manager";
+import {IS_DELETED_PROP_NAME} from "../samurai-db/samurai-db";
 
 interface LineEntry {
     key: string;
@@ -55,6 +56,13 @@ export class Compactor {
                 // Находим все записи с текущим ключом и выбираем новейшую
                 const currentKey = minKeyEntry.currentLine!.key;
                 const latestEntry = await this.findLatestEntryForKey(fileReaders, currentKey);
+
+                const valueAsObject = JSON.parse(latestEntry.value);
+                if  (valueAsObject[IS_DELETED_PROP_NAME]) {
+                    // Продвигаем вперед читатели, которые имели текущий ключ
+                    await this.advanceReadersWithKey(fileReaders, currentKey);
+                    continue;
+                }
 
                 // Добавляем запись в текущий чанк
                 currentChunk.push(latestEntry);

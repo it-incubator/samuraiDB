@@ -118,24 +118,42 @@ export class SSTable {
         if (!this.index.has(key)) return Promise.resolve(null);
 
         const position = this.index.get(key)!;
-        const stream = fs.createReadStream(this.dataFilePath, { start: position, encoding: "utf-8" });
-        const rl = readline.createInterface({ input: stream });
+        const stream = fs.createReadStream(this.dataFilePath, {
+            start: position,
+            encoding: "utf-8"
+        });
 
-        return new Promise((resolve) => {
-            rl.once("line", (line) => {
-                rl.close();
-                stream.destroy(); // Close the stream properly
+        return new Promise((resolve, reject) => {
+            let buffer = "";
 
-                const [storedKey, storedValue] = line.split(/:(.+)/);
-                resolve(storedValue ? JSON.parse(storedValue) : null);
+            stream.on("data", (chunk) => {
+                buffer += chunk;
+                const newlineIndex = buffer.indexOf("\n");
+
+                if (newlineIndex !== -1) {
+                    stream.destroy(); // Остановить поток как только нашли первую строку
+
+                    const line = buffer.slice(0, newlineIndex);
+                    console.log('👀 LINE:', line);
+
+                    const [storedKey, storedValue] = line.split(/:(.+)/);
+                    console.log('🎹:', storedValue);
+
+                    try {
+                        resolve(storedValue ? JSON.parse(storedValue) : null);
+                    } catch {
+                        resolve(null);
+                    }
+                }
             });
 
-            rl.once("error", () => resolve(null)); // Handle potential stream errors
-            stream.once("error", () => resolve(null)); // Handle stream errors
+            stream.on("error", () => resolve(null));
+            stream.on("end", () => resolve(null)); // если \n не встретился
         });
     }
 
     delete(): void {
+        this.index = new Map();
         // todo: move to filemanager
         if (fs.existsSync(this.dataFilePath)) fs.unlinkSync(this.dataFilePath);
         if (fs.existsSync(this.indexFilePath)) fs.unlinkSync(this.indexFilePath);

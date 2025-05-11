@@ -48,37 +48,3 @@ export const createLineReader = (filePath) => {
     return reader;
 }
 
-export const readLine = (reader) => {
-    return new Promise((resolve) => {
-        // Check if we've already hit the end of the file using our custom flag
-        if (reader._customClosed) {
-            resolve(null);
-            return;
-        }
-
-        // Flag to indicate if this promise has been resolved
-        let isResolved = false;
-
-        const onLine = (line) => {
-            if (!isResolved) {
-                isResolved = true;
-                reader.removeListener('line', onLine);
-                reader.removeListener('close', onClose);
-                resolve(line);
-            }
-        };
-
-        const onClose = () => {
-            if (!isResolved) {
-                isResolved = true;
-                reader._customClosed = true;
-                reader.removeListener('line', onLine);
-                reader.removeListener('close', onClose);
-                resolve(null);
-            }
-        };
-
-        reader.once('line', onLine);
-        reader.once('close', onClose);
-    });
-}

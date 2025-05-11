@@ -14,6 +14,10 @@ export class SSTablesManager {
     }
 
     constructor(private fileManager: FileManager, private idManager: IIdManager<any>) {
+        this.recreateLevelsMap()
+    }
+
+    private recreateLevelsMap() {
         this.ssTablesLevels = new Map<number, SSTable[]>()
         this.ssTablesLevels.set(0, [])
     }
@@ -63,8 +67,9 @@ export class SSTablesManager {
         for (const ssTablesLevel of this.ssTablesLevels) {
             ssTablesLevel[1].map(ssT => {
                 ssT.delete();
-                this.fileManager.drop();
             })
         }
+        this.fileManager.drop();
+        this.recreateLevelsMap();
     }
 }

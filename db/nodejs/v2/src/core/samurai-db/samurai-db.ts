@@ -4,7 +4,7 @@ import {SSTablesManager} from "./ss-tables-manager";
 import {MemTable} from "../mem-table/mem-table";
 import {IIdManager} from "./i-id-manager";
 
-const IS_DELETED_PROP_NAME = '__IS_DELETED__';
+export const IS_DELETED_PROP_NAME = '__IS_DELETED__';
 
 export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
     constructor(private memTable: MemTable<TKey, TValue>, private fileManager: FileManager, private idManager: IIdManager<TKey>, private sSTablesManager: SSTablesManager) {
@@ -17,7 +17,7 @@ export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
     }
 
     public async set(key: TKey | null, value: TValue): Promise<TValue> {
-        const correctedKey = key === null ? this.idManager.getNext() : key;
+        const correctedKey = key === null ? this.idManager.getNext() : this.idManager.convertToIdFormat(key);
         this.memTable.set(correctedKey, {...value, id: correctedKey});
         const needFlushToSSTable = this.memTable.isFull();
         if (needFlushToSSTable) {
@@ -60,5 +60,6 @@ export class SamuraiDb<TKey, TValue> implements ISamuraiDB<TKey, TValue> {
     public drop() {
         this.memTable.drop();
         this.sSTablesManager.drop();
+        this.idManager.reset()
     }
 }

@@ -28,12 +28,15 @@ pnpm start:debug
 - ✅ done compaction first value for first level 
 - ✅ run compaction by endpoint and add test to chec that after copmaction we can read data
 - ✅ delete item by key
-- 🟩 during compaction skip __DELETED__ itmas (now they are coping to level1 but dont must)
-- 🟩 delete all data for tests
-- 🟩 to e2e tests after compaction add new data and check that it's OK 
+- ✅ during compaction skip __DELETED__ itmas (now they are coping to level1 but dont must)
+- ✅ delete all data for tests
+- ✅ to e2e tests after compaction add new data and check that it's OK
 - 🟩 do the same for level0 + level 1 -> level1+level2 -> level2+level3
-- 🟩 do new more simple alg for others levels 
+- 🟩 run compaction by scheduler (пока без блокировок в последоватлеьном режиме)
+- 🟨 unit tests???? for all components?
+- 🟩 do new more simple alg for others levels (вроде нет смысла потому что по факту все слои всё равно нужно сливать с предыдущим.. а значит нужны теже курсоры...)
 
+- 🟩 concurrency\multithreading
 
 🟨 index in memory should be by interval/range to minimize data in memeory
 

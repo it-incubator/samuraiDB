@@ -17,7 +17,6 @@ export class SamuraiDBDriver<T> {
 
     connection.subscribeToEvents('connect', () => {
       connection.client.on('data', (data) => {
-        console.log('Received from server:', data.toString());
         const action = JSON.parse(data.toString());
         this.requestsMap.get(action.requestId).resolve(action.payload);
         this.requestsMap.delete(action.requestId);

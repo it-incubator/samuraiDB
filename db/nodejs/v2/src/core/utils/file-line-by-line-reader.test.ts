@@ -1,4 +1,4 @@
-import {createLineReader, readLine, start} from "./file-line-by-line-reader";
+import {createLineReader, start} from "./file-line-by-line-reader";
 import * as path from "path";
 
 const TEST_DIR = path.join(__dirname, "test-data");
